@@ -202,5 +202,36 @@ Finally, a single HTML report can be obtained using:
 ```
 dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
 ```
+### 3.4 Spectronaut
+
+The code below shows how to run **diagFDR** directly from an export of Spectronaut at the "elution group" level. 
+The export is assumed to be a "normal" report (not "pivot" report) that contains peptides characterized by "elution groups". 
+It has to contain the columns "EG.Qvalue", "EG.Cscore" and "EG.IsDecoy".
+
+First, you have to upload the file in your R session:
+```
+rep <- read_spectronaut_efficient("path/to/search_results.Report-Peptide normal.tsv", minimal = TRUE, dec = ",")
+```
+Next, the elution group universe can be extracted by:
+```
+univ_runwise <- spectronaut_runxprecursor(
+  rep,
+  q_col = "EG.Qvalue",
+  score_col = "EG.Cscore"
+)
+```
+Next, all diagnostics measures can be obtained with:
+```
+diag <- dfdr_run_all(
+  xs = list(runwise = univ_runwise),
+  alpha_main = 0.01,
+  alphas = c(1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
+  eps = 0.2,
+  win_rel = 0.2,
+  truncation = "warn_drop",
+  low_conf = c(0.2, 0.5),
+  compute_pseudo_pvalues = TRUE  # <-- This adds p-value diagnostics
+)
+```
 
 ---
