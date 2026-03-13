@@ -90,4 +90,47 @@ Finally, a single HTML report can be obtained using:
 ```
 dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
 ```
+
+### 3.2 MaxQuant
+
+To enable all diagnostics at the precursor level, the `msms.txt` file resulting from the search has to be used.
+
+First, you have to upload the  `msms.txt ` file in your R session:
+```
+mq_path <- "path/to/msms.txt"
+
+# Read msms.txt and reconstruct TDC q-values using MaxQuant Score and Reverse indicator.
+# - Reverse == "+" is treated as a decoy indicator.
+# - Score is assumed "higher is better".
+# - q-values are computed using FDR(i) = (D(i)+add_decoy)/T(i) and q(i)=min_{j>=i} FDR(j).
+x_mq <- read_dfdr_maxquant_msms(
+  path = mq_path,
+  pep_mode = "sanitize",          # or "drop" if PEP contains values >1
+  exclude_contaminants = TRUE,
+  add_decoy = 1L,
+  unit = "psm",
+  scope = "global",
+  provenance = list(tool = "MaxQuant", file = basename(mq_path))
+)
+```
+
+Next, all diagnostics measures can be obtained with:
+```
+diag <- dfdr_run_all(
+  xs = list(MaxQuant_PSM = x_mq),
+  alpha_main = 0.01,
+  alphas = c(1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
+  eps = 0.2,
+  win_rel = 0.2,
+  truncation = "warn_drop",
+  low_conf = c(0.2, 0.5),
+  compute_pseudo_pvalues = TRUE  # <-- This adds p-value diagnostics
+)
+```
+
+Finally, a single HTML report can be obtained using:
+```
+dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
+```
+
 ---
