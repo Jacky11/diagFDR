@@ -16,8 +16,10 @@ Imports:
     rlang,
     readr,
     xml2, 
-    cp4p, 
-    grid
+    cp4p,
+    tidyr,
+    scales,
+    data.table
 Suggests:
     arrow,
     knitr,
