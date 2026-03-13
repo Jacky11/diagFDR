@@ -344,7 +344,7 @@ dfdr_plot_p_density_by_decoy <- function(x,
 #' Given p-values (or pseudo-p-values), estimates pi0 using cp4p::estim.pi0()
 #' and plots the curve:
 #'   FDR_hat(t) = (pi0_hat * m * t) / R(t),
-#' where R(t) = # {p <= t}, m = total number of tested hypotheses (after filtering).
+#' where R(t) = Card(p <= t), m = total number of tested hypotheses (after filtering).
 #'
 #' @param x A dfdr_tbl (or data.frame) containing columns \code{id}, \code{p}, \code{is_decoy}.
 #' @param sel Subset to use: "all", "target", or "decoy" (case-insensitive).
@@ -353,7 +353,7 @@ dfdr_plot_p_density_by_decoy <- function(x,
 #'   "histo","langaas","pounds","abh","slim". (Do not use "ALL" here.)
 #' @param nbins,pz Passed to cp4p::estim.pi0().
 #' @param t_grid Grid of t values in (0,1] at which to evaluate the curve.
-#' @param r_min Numeric value, uses to compute R(t) := # {p <= t} + r_min to avoid division by zero at tiny t.
+#' @param r_min Numeric value, uses to compute R(t) := Card(p <= t) + r_min to avoid division by zero at tiny t.
 #' @param cap_one If TRUE, caps FDR_hat at 1.
 #'
 #' @return A list with:
