@@ -1,7 +1,7 @@
 <h1 align="center">diagFDR: Verifiable FDR Diagnostics for Proteomics</h1>
 
 <p align="center" style="max-width: 100%; max-height: 100%;">
-  <img src="diagFDR.png" width="250" height="300">
+  <img src="diagFDR.png" width="250" height="300"> 
 </p>
 
 <div align="center" style="margin-top: 10px;">
