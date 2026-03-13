@@ -24,7 +24,7 @@ You can now load it and run the app with this commands:
 library(diagFDR)
 ```
 
-## 3. Verifiable FDR diagnostics HTML report
+## 3. Verifiable FDR diagnostics HTML reports
 
 A standardized HTML report can be obtained from any identification software using the dfdr_render_report() function to check the scope, the calibration, and the stability of a FDR-based identification search. Here we provide the way to get it from most common software.
 
@@ -55,7 +55,7 @@ x_global_gq <- diann_global_precursor(
   q_source = "Global.Q.Value"
 )
 ```
-A Run×precursor universe using run-wise Q.Value recommended for per-run decisions can also be extracted:
+A run×precursor universe using run-wise Q.Value recommended for per-run decisions can also be extracted:
 ```
 x_runx <- diann_runxprecursor(
   rep,
