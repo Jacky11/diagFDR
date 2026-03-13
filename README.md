@@ -133,4 +133,74 @@ Finally, a single HTML report can be obtained using:
 dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
 ```
 
+### 3.3 mzIdentML files (Comet, X!Tandem, OMSSA, MS-GF+, Mascot, PEAKS, PeptideShaker)
+
+Many search engines can export identifications in mzIdentML format. When explicit q-values
+and/or PEPs are not present in the mzIdentML, `diagFDR` can:
+
+1. extract a **competed PSM universe** (rank-1 by default),
+2. infer target/decoy labels,
+3. select a primary numeric score CV term (configurable),
+4. reconstruct **TDC q-values** from scores via target--decoy counting (TDC),
+5. compute scope/calibration/stability diagnostics.
+
+mzIdentML is flexible and tool-dependent. If the score CV term or decoy labeling is not encoded consistently, you may need to adjust `score_accession_preference`, `score_direction`, and/or `decoy_regex`.
+
+First, you have to upload the file in your R session:
+```
+mzid_path <- "path/to/search_results.mzid"
+
+#Read the mzid file. Check the help of the function using `help(read_dfdr_mzid)` to adapt to your software outputs. 
+x_mzid <- read_dfdr_mzid(
+  mzid_path = mzid_path,
+  rank = 1L,  # competed universe: take rank-1 SpectrumIdentificationItem
+
+  # Choose a score CV term (priority list) and interpret its direction
+  score_accession_preference = c(
+    "MS:1002257", # example: MS-GF:RawScore (often higher is better)
+    "MS:1001330", # Mascot:score (higher is better)
+    "MS:1001328", # SEQUEST:xcorr (higher is better)
+    "MS:1002052",
+    "MS:1002049",
+    "MS:1001331",
+    "MS:1001171",
+    "MS:1001950",
+    "MS:1002466"
+  ),
+  score_direction = "auto",  # or "higher_better"/"lower_better" if auto fails
+
+  # TDC correction: FDR_hat = (D + add_decoy)/T
+  add_decoy = 1L,
+
+  # Strict by default: require score for all PSMs (set <1 to allow missing)
+  min_score_coverage = 1.0,
+
+  # Fallback decoy inference if PeptideEvidence@isDecoy is not informative
+  decoy_regex = "(^##|_REVERSED$|^REV_|^DECOY_)",
+
+  unit = "psm",
+  scope = "global",
+  provenance = list(file = basename(mzid_path))
+)
+```
+
+Next, all diagnostics measures can be obtained with:
+```
+diag <- dfdr_run_all(
+  xs = list(mzid_PSM = x_mzid),
+  alpha_main = 0.01,
+  alphas = c(1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
+  eps = 0.2,
+  win_rel = 0.2,
+  truncation = "warn_drop",
+  low_conf = c(0.2, 0.5),
+  compute_pseudo_pvalues = TRUE  # <-- This adds p-value diagnostics
+)
+```
+
+Finally, a single HTML report can be obtained using:
+```
+dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
+```
+
 ---
