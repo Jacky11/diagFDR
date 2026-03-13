@@ -1,0 +1,164 @@
+---
+title: "diagFDR: mokapot diagnostics (competed winners)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{diagFDR: mokapot diagnostics (competed winners)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 7,
+  fig.height = 4.5
+)
+```
+
+This vignette demonstrates how to compute **diagFDR** diagnostics from **mokapot**
+PSM exports.
+
+A key choice is to compute diagnostics on **competed winners**: one PSM per
+`run + spectrum_id`, selecting the maximum mokapot score among candidates
+(targets and decoys). This corresponds to the standard *target–decoy competition*
+setting for PSM-level inference.
+
+The workflow is:
+
+1. Read mokapot target and decoy PSM outputs.
+2. Construct a competed-winner universe.
+3. Run `dfdr_run_all()` and inspect tables/plots.
+4. Optionally export results and a human-readable report.
+
+## Runnable toy example (no external files required)
+
+We start with a small simulated dataset that resembles a competed-winner mokapot output.
+Any workflow producing a table that can be mapped to columns
+`id`, `is_decoy`, `q`, `pep`, `run`, and `score` can similarly be used.
+
+```{r toy}
+library(diagFDR)
+
+set.seed(2)
+
+n <- 6000
+toy <- data.frame(
+  id = paste0("run1||scan", seq_len(n)),
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.98, 0.02)),
+  q = pmin(1, runif(n)^3),                                  # many small q-values
+  pep = pmin(1, pmax(0, runif(n)^3 + rnorm(n, sd = 0.02))), # correlated toy PEP
+  run = "run1",
+  score = rnorm(n)
+)
+
+x <- as_dfdr_tbl(
+  toy,
+  unit = "psm",
+  scope = "global",
+  q_source = "toy mokapot",
+  q_max_export = 1
+)
+
+diag <- dfdr_run_all(
+  xs = list(mokapot = x),
+  alpha_main = 0.01,
+  alphas = c(5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
+  low_conf = c(0.2, 0.5)
+)
+```
+
+### Headline stability at 1%
+
+```{r headline}
+diag$tables$headline
+```
+
+### Decoy tail support and stability proxy
+
+```{r stability-plots}
+diag$plots$dalpha
+diag$plots$cv
+```
+
+### Local boundary support and elasticity
+
+```{r boundary-stability}
+diag$plots$dwin
+diag$plots$elasticity
+```
+
+### Equal-chance plausibility by q-band (internal check)
+
+```{r equal-chance}
+diag$tables$equal_chance_pooled
+diag$plots$equal_chance__mokapot
+```
+
+### PEP reliability and expected errors (ΣPEP)
+
+```{r pep}
+diag$tables$pep_IPE
+diag$plots$pep_reliability__mokapot
+```
+
+```{r sumpep}
+# sumpep is a list-of-tibbles (one per list)
+diag$tables$sumpep$mokapot
+```
+
+## Real mokapot workflow (targets + decoys text exports)
+
+The code below shows how to run **diagFDR** directly from mokapot outputs.
+
+```{r real-mokapot, eval=FALSE}
+library(diagFDR)
+
+# Read mokapot outputs (targets + decoys)
+raw <- read_mokapot_psms(
+  target_path = "path/to/your_output.mokapot.psms.txt",
+  decoy_path  = "path/to/your_output.mokapot.decoy.psms.txt"
+)
+
+# Construct competed winners (1 per run+spectrum_id; max mokapot score)
+x <- mokapot_competed_universe(
+  raw,
+  id_mode = "runxid",        # recommended: id = run||spectrum_id
+  unit = "psm",
+  scope = "global",
+  q_source = "mokapot q-value",
+  q_max_export = 1
+)
+
+# Run diagnostics
+diag <- dfdr_run_all(
+  xs = list(mokapot = x),
+  alpha_main = 0.01,
+  alphas = c(5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
+  low_conf = c(0.2, 0.5)
+)
+
+# Write outputs to disk (tables + plots + summary + manifest + README)
+dfdr_write_report(
+  diag,
+  out_dir = "diagFDR_mokapot_out",
+  formats = c("csv", "png", "manifest", "readme", "summary")
+)
+
+# Render a single HTML report (requires rmarkdown in Suggests)
+dfdr_render_report(diag, out_dir = "diagFDR_mokapot_out")
+```
+
+## Interpretation notes
+
+- `D_alpha` (tail support) and `D_alpha_win` (local boundary support) quantify how well the
+  cutoff is supported by decoys. Very strict thresholds can yield sparse decoy tails and thus
+  unstable operating points (large `CV_hat`).
+
+- `S_alpha(eps)` (elasticity) captures list sensitivity to small threshold perturbations.
+  Low Jaccard overlap indicates that accepted IDs are sensitive to the chosen cutoff.
+
+- Equal-chance diagnostics (decoy fraction in low-confidence q-bands) and PEP-based diagnostics
+  (PEP reliability, ΣPEP) are **internal consistency checks** under target–decoy assumptions.
+  They are informative but do not replace external validation strategies (e.g., entrapment) when
+  decoy representativeness is uncertain.
