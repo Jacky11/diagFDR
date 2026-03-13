@@ -11,6 +11,8 @@ dfdr_plot_pep_reliability_tdc(
 }
 \arguments{
 \item{rel_tbl}{Output of dfdr_pep_reliability_tdc()}
+
+\item{title}{Title of the plot}
 }
 \value{
 ggplot

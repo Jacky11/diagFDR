@@ -2,7 +2,7 @@
 % Please edit documentation in R/diag_p_calibration.R
 \name{dfdr_plot_p_calibration2}
 \alias{dfdr_plot_p_calibration2}
-\title{Plot p-value calibration (cp4p-style, ALL pi0 estimators) as ggplot2}
+\title{P-value calibration plot (cp4p-style), with multiple pi0 reference curves}
 \usage{
 dfdr_plot_p_calibration2(
   x,
@@ -14,21 +14,20 @@ dfdr_plot_p_calibration2(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl (or data.frame) containing columns \code{id}, \code{is_decoy}, \code{p}.}
+\item{x}{A dfdr_tbl (or data.frame) containing columns id, is_decoy, p.}
 
-\item{sel}{Which subset to plot: "all", "decoy", or "target" (case-insensitive).}
+\item{sel}{Subset: "all", "decoy", or "target".}
 
-\item{nbins, pz}{Passed to cp4p::estim.pi0.}
+\item{nbins, pz}{Passed to cp4p::estim.pi0().}
 
-\item{step}{Grid resolution for the x-axis (1 - p) grid.}
+\item{step}{Grid step for abs = 1-p.}
 
-\item{return_data}{If TRUE, returns a list(plot=..., pi0=..., data=...); else returns ggplot only.}
+\item{return_data}{If TRUE, return plot + computed data.}
 }
 \value{
-A ggplot object (default), or a list if \code{return_data=TRUE}.
+ggplot (or list if return_data=TRUE)
 }
 \description{
-ggplot re-implementation of the "ALL" branch of cp4p::calibration.plot().
-Plots the empirical CDF of (1 - p) vs (1 - p), and overlays reference curves
-dr(abs) = pi0 * (abs - 1 + c) / c, where c = max(p).
+Plots ECDF of (1-p) against reference curves derived from cp4p::estim.pi0()
+using multiple pi0 estimation methods.
 }

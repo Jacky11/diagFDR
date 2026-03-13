@@ -27,6 +27,6 @@ dfdr_pi0_storey(
 A list with elements \code{pi0} (tibble) and \code{summary} (tibble).
 }
 \description{
-Estimates pi0(lambda) = #{p > lambda} / ((1-lambda)*m) across a grid of lambdas.
+Estimates pi0(lambda) = Card(p > lambda) / ((1-lambda)*m) across a grid of lambdas.
 Intended as a plausibility diagnostic for (pseudo-)p-values.
 }

@@ -28,9 +28,9 @@ For "target", keeps !is_decoy; for "decoy", keeps is_decoy.}
 
 \item{t_grid}{Grid of t values in (0,1] at which to evaluate the curve.}
 
-\item{cap_one}{If TRUE, caps FDR_hat at 1.}
+\item{r_min}{Numeric value, uses to compute R(t) := Card(p <= t) + r_min to avoid division by zero at tiny t.}
 
-\item{add_one}{If TRUE, uses R(t) := #{p <= t} + 1 to avoid division by zero at tiny t.}
+\item{cap_one}{If TRUE, caps FDR_hat at 1.}
 }
 \value{
 A list with:
@@ -45,5 +45,5 @@ A list with:
 Given p-values (or pseudo-p-values), estimates pi0 using cp4p::estim.pi0()
 and plots the curve:
 FDR_hat(t) = (pi0_hat * m * t) / R(t),
-where R(t) = #{p <= t}, m = total number of tested hypotheses (after filtering).
+where R(t) = Card(p <= t), m = total number of tested hypotheses (after filtering).
 }

@@ -13,5 +13,5 @@ flag_headline(headline_tbl)
 Same table with added columns: status, flags, interpretation
 }
 \description{
-Flag diagnostic values based on heuristic thresholds
+Produces ASCII-only flags for portability. Rendering as icons is handled in the HTML template.
 }
