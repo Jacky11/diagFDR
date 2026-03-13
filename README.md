@@ -26,7 +26,7 @@ library(diagFDR)
 
 ## 3. Verifiable FDR diagnostics HTML reports
 
-A standardized HTML report can be obtained from any identification software using the dfdr_render_report() function to check the scope, the calibration, and the stability of a FDR-based identification search. Here we provide the way to get it from most common software.
+A standardized HTML report can be obtained from any identification software using the dfdr_render_report() function to check the scope, the calibration, and the stability of a FDR-based identification search. Here we provide the way to get it from most common software, and from any software output.
 
 ### 3.1 DIA-NN
 
@@ -130,7 +130,7 @@ diag <- dfdr_run_all(
 
 Finally, a single HTML report can be obtained using:
 ```
-dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
+dfdr_render_report(diag, out_dir = "path/to/diagFDR_maxquant_out")
 ```
 
 ### 3.3 mzIdentML files (Comet, X!Tandem, OMSSA, MS-GF+, Mascot, PEAKS, PeptideShaker)
@@ -200,7 +200,7 @@ diag <- dfdr_run_all(
 
 Finally, a single HTML report can be obtained using:
 ```
-dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
+dfdr_render_report(diag, out_dir = "path/to/diagFDR_mzid_out")
 ```
 ### 3.4 Spectronaut
 
@@ -232,6 +232,63 @@ diag <- dfdr_run_all(
   low_conf = c(0.2, 0.5),
   compute_pseudo_pvalues = TRUE  # <-- This adds p-value diagnostics
 )
+```
+Finally, a single HTML report can be obtained using:
+```
+dfdr_render_report(diag, out_dir = "path/to/diagFDR_spectronaut_out")
+```
+
+### 3.5 Any software output
+
+Any software producing outputs that can be mapped to columns `id`, `is_decoy`, `q`, `pep`, `run`, and `score` can similarly be used.
+Here, we provide a simulated dataset:
+```
+n <- 8000
+toy <- data.frame(
+  id = as.character(seq_len(n)),
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.98, 0.02)),
+  run = sample(paste0("run", 1:3), n, replace = TRUE),
+  score = c(rnorm(n * 0.98, mean = 7, sd = 1), rnorm(n * 0.02, mean = 5, sd = 1))[seq_len(n)],
+  pep = NA_real_
+)
+
+# Reconstruct q-values by simple TDC from score (for toy data only):
+# Here we mimic a typical "higher score is better" setting.
+toy <- toy[order(toy$score, decreasing = TRUE), ]
+toy$D_cum <- cumsum(toy$is_decoy)
+toy$T_cum <- cumsum(!toy$is_decoy)
+toy$FDR_hat <- (toy$D_cum + 1) / pmax(toy$T_cum, 1)
+toy$q <- rev(cummin(rev(toy$FDR_hat)))
+toy <- toy[, c("id","is_decoy","q","pep","run","score")]
+```
+
+Next, the dataset has to be converted into a `dfdr_tbl`:
+```
+x_toy <- as_dfdr_tbl(
+  toy,
+  unit = "psm",
+  scope = "global",
+  q_source = "toy TDC from score",
+  q_max_export = 1,
+  provenance = list(tool = "toy")
+)
+```
+Next, all diagnostics measures can be obtained with:
+```
+diag <- dfdr_run_all(
+  xs = list(runwise = univ_runwise),
+  alpha_main = 0.01,
+  alphas = c(1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
+  eps = 0.2,
+  win_rel = 0.2,
+  truncation = "warn_drop",
+  low_conf = c(0.2, 0.5),
+  compute_pseudo_pvalues = TRUE  # <-- This adds p-value diagnostics
+)
+```
+Finally, a single HTML report can be obtained using:
+```
+dfdr_render_report(diag, out_dir = "path/to/diagFDR_sim_out")
 ```
 
 ---
