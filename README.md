@@ -70,7 +70,7 @@ x_runx <- diann_runxprecursor(
 All diagnostics measures can be obtained with:
 ```
 diag <- dfdr_run_all(
-  xs = list(global = x_global_gq, runx = x_runx, minrun = x_minrun),
+  xs = list(global = x_global_gq, runx = x_runx),
   alpha_main = 0.01,
   compute_pseudo_pvalues = TRUE  # <-- This adds p-value diagnostics
 )
