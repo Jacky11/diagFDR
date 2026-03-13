@@ -276,7 +276,7 @@ x_toy <- as_dfdr_tbl(
 Next, all diagnostics measures can be obtained with:
 ```
 diag <- dfdr_run_all(
-  xs = list(runwise = univ_runwise),
+  xs = list(univ = x_toy),
   alpha_main = 0.01,
   alphas = c(1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
   eps = 0.2,
