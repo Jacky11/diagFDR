@@ -33,7 +33,7 @@ A standardized HTML report can be obtained from any identification software usin
 To enable all diagnostics at the precursor level, perform the search in DIA-NN using:
 
 - decoys export: `--report-decoys`
-- a permissive export ceiling: `--qvalue 0.5` (or higher)
+- a permissive export ceiling: `--qvalue 0.5` (or higher if possible)
 
 The q-value ceiling matters because some diagnostics operate in low-confidence regions
 (e.g. equal-chance plausibility checks, or local-window support around cutoffs).
