@@ -1,6 +1,6 @@
 #' Storey pi0(lambda) tail-uniformity diagnostic
 #'
-#' Estimates pi0(lambda) = #{p > lambda} / ((1-lambda)*m) across a grid of lambdas.
+#' Estimates pi0(lambda) = # {p > lambda} / ((1-lambda)*m) across a grid of lambdas.
 #' Intended as a plausibility diagnostic for (pseudo-)p-values.
 #'
 #' @param x A dfdr_tbl (or data.frame) containing column \code{p}.
