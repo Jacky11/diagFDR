@@ -26,7 +26,7 @@ if(!requireNamespace("devtools", quietly = TRUE)){
 }
 devtools::install_github("Jacky11/diagFDR")
 ```
-You can now load it and run the app with this commands:
+You can now load it inside the R session:
 ```
 library(diagFDR)
 ```
