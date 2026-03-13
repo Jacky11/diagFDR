@@ -110,26 +110,24 @@ dfdr_plot_equal_chance <- function(bands_tbl, title = "Equal-chance plausibility
 dfdr_plot_score_distributions <- function(x, title = "Target vs Decoy Score Distributions") {
   validate_dfdr_tbl(x)
 
-  # Determine which variable to plot
   use_score <- "score" %in% names(x) && !all(is.na(x$score))
-  use_q <- !use_score  # Fallback to q-values if no score
 
   if (use_score) {
     plot_data <- x |>
-      dplyr::filter(!is.na(score)) |>
+      dplyr::filter(is.finite(.data$score)) |>
       dplyr::mutate(
-        type = ifelse(is_decoy, "Decoy", "Target"),
-        value = score
+        type = dplyr::if_else(.data$is_decoy, "Decoy", "Target"),
+        value = .data$score
       )
     x_label <- "Score"
     plot_title <- title
     use_log <- FALSE
   } else {
     plot_data <- x |>
-      dplyr::filter(!is.na(q), q > 0) |>  # Filter out q=0 for log scale
+      dplyr::filter(is.finite(.data$q), .data$q > 0) |>
       dplyr::mutate(
-        type = ifelse(is_decoy, "Decoy", "Target"),
-        value = q
+        type = dplyr::if_else(.data$is_decoy, "Decoy", "Target"),
+        value = .data$q
       )
     x_label <- "q-value"
     plot_title <- sub("Score [Dd]istributions?", "q-value distributions", title)
@@ -141,7 +139,7 @@ dfdr_plot_score_distributions <- function(x, title = "Target vs Decoy Score Dist
     return(ggplot2::ggplot() + ggplot2::labs(title = paste(plot_title, "(no data)")))
   }
 
-  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = value, fill = type, color = type)) +
+  p <- ggplot2::ggplot(plot_data, ggplot2::aes(x = .data$value, fill = .data$type, color = .data$type)) +
     ggplot2::geom_density(alpha = 0.3, linewidth = 0.8) +
     ggplot2::scale_fill_manual(values = c("Target" = "#2E86AB", "Decoy" = "#A23B72")) +
     ggplot2::scale_color_manual(values = c("Target" = "#2E86AB", "Decoy" = "#A23B72")) +
@@ -158,18 +156,14 @@ dfdr_plot_score_distributions <- function(x, title = "Target vs Decoy Score Dist
       plot.title = ggplot2::element_text(face = "bold")
     )
 
-  # Use log scale for q-values
   if (use_log) {
     p <- p +
-      ggplot2::scale_x_log10(
-        labels = scales::label_number(accuracy = 0.001)
-      ) +
+      ggplot2::scale_x_log10(labels = scales::label_number(accuracy = 0.001)) +
       ggplot2::annotation_logticks(sides = "b")
   }
 
   p
 }
-
 
 #' Plot scope disagreement as Jaccard overlap heatmap
 #'
@@ -178,51 +172,46 @@ dfdr_plot_score_distributions <- function(x, title = "Target vs Decoy Score Dist
 #' @return A ggplot heatmap
 #' @export
 dfdr_plot_scope_disagreement_matrix <- function(xs, alpha = 0.01) {
-
-  # Helper to extract base precursor ID (strip run prefix if present)
   extract_base_id <- function(ids) {
-    # If IDs contain "||", extract part after it (runxprecursor format)
-    # Otherwise use as-is (precursor format)
-    ifelse(grepl("\\|\\|", ids),
-           sub("^.*\\|\\|", "", ids),  # Everything after ||
-           ids)                         # Keep as-is
+    ifelse(grepl("\\|\\|", ids), sub("^.*\\|\\|", "", ids), ids)
   }
 
-  # Get accepted target sets with normalized IDs
   accepted <- purrr::map(xs, ~{
     .x |>
-      dplyr::filter(!is_decoy, q <= alpha) |>
-      dplyr::pull(id) |>
+      dplyr::filter(!.data$is_decoy, .data$q <= alpha) |>
+      dplyr::pull(.data$id) |>
       extract_base_id() |>
       unique()
   })
 
-  # Compute pairwise Jaccard
   n_lists <- length(accepted)
   list_names <- names(accepted)
 
-  jaccard_mat <- matrix(NA, n_lists, n_lists, dimnames = list(list_names, list_names))
+  jaccard_mat <- matrix(NA_real_, n_lists, n_lists, dimnames = list(list_names, list_names))
 
   for (i in seq_len(n_lists)) {
     for (j in seq_len(n_lists)) {
       if (i == j) {
         jaccard_mat[i, j] <- 1.0
       } else {
-        intersection <- length(intersect(accepted[[i]], accepted[[j]]))
-        union_size <- length(union(accepted[[i]], accepted[[j]]))
-        jaccard_mat[i, j] <- if (union_size > 0) intersection / union_size else 0
+        inter <- length(intersect(accepted[[i]], accepted[[j]]))
+        uni <- length(union(accepted[[i]], accepted[[j]]))
+        jaccard_mat[i, j] <- if (uni > 0) inter / uni else 0
       }
     }
   }
 
-  # Convert to long format for ggplot
   jaccard_df <- as.data.frame(jaccard_mat) |>
     tibble::rownames_to_column("list1") |>
-    tidyr::pivot_longer(-list1, names_to = "list2", values_to = "jaccard")
+    tidyr::pivot_longer(
+      cols = -dplyr::all_of("list1"),
+      names_to = "list2",
+      values_to = "jaccard"
+    )
 
-  ggplot2::ggplot(jaccard_df, ggplot2::aes(x = list1, y = list2, fill = jaccard)) +
+  ggplot2::ggplot(jaccard_df, ggplot2::aes(x = .data$list1, y = .data$list2, fill = .data$jaccard)) +
     ggplot2::geom_tile(color = "white", linewidth = 1) +
-    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", jaccard)),
+    ggplot2::geom_text(ggplot2::aes(label = sprintf("%.2f", .data$jaccard)),
                        size = 5, fontface = "bold") +
     ggplot2::scale_fill_gradient2(
       low = "#d73027", mid = "#fee08b", high = "#1a9850",
@@ -230,7 +219,7 @@ dfdr_plot_scope_disagreement_matrix <- function(xs, alpha = 0.01) {
       name = "Jaccard\noverlap"
     ) +
     ggplot2::labs(
-      title = sprintf("Scope disagreement at α = %.2g", alpha),
+      title = sprintf("Scope disagreement at alpha = %.2g", alpha),
       subtitle = "Jaccard overlap of accepted target sets (precursor-level comparison)",
       x = "", y = ""
     ) +
@@ -243,7 +232,6 @@ dfdr_plot_scope_disagreement_matrix <- function(xs, alpha = 0.01) {
     ) +
     ggplot2::coord_fixed()
 }
-
 
 #' Plot PEP density by decoy/target
 #'
@@ -262,22 +250,16 @@ dfdr_plot_pep_density_by_decoy <- function(x, pep_max = 0.5,
   if (!"pep" %in% names(x)) rlang::abort("`x` must contain a `pep` column.")
 
   df <- x |>
-    dplyr::filter(is.finite(pep), pep >= 0, pep <= pep_max) |>
-    dplyr::mutate(class = ifelse(is_decoy, "Decoy", "Target"))
+    dplyr::filter(is.finite(.data$pep), .data$pep >= 0, .data$pep <= pep_max) |>
+    dplyr::mutate(class = dplyr::if_else(.data$is_decoy, "Decoy", "Target"))
 
-  ggplot2::ggplot(df, ggplot2::aes(x = pep, color = class, fill = class)) +
-    ggplot2::geom_density(
-      linewidth = 1,
-      alpha = 0.25,
-      bw = bw,
-      adjust = adjust,
-      na.rm = TRUE
-    ) +
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$pep, color = .data$class, fill = .data$class)) +
+    ggplot2::geom_density(linewidth = 1, alpha = 0.25, bw = bw, adjust = adjust, na.rm = TRUE) +
     ggplot2::scale_color_manual(values = c(Target = "#2b8cbe", Decoy = "#d7301f")) +
     ggplot2::scale_fill_manual(values = c(Target = "#2b8cbe", Decoy = "#d7301f")) +
     ggplot2::labs(
       title = title,
-      subtitle = sprintf("Density truncated to pep ≤ %.2f", pep_max),
+      subtitle = sprintf("Density truncated to pep <= %.2f", pep_max),
       x = "PEP", y = "Density",
       color = NULL, fill = NULL
     ) +
@@ -287,16 +269,19 @@ dfdr_plot_pep_density_by_decoy <- function(x, pep_max = 0.5,
 #' Plot target-focused PEP reliability (TDC-style)
 #'
 #' @param rel_tbl Output of dfdr_pep_reliability_tdc()
+#' @param title Title of the plot
 #' @return ggplot
 #' @export
 dfdr_plot_pep_reliability_tdc <- function(rel_tbl,
                                           title = "PEP reliability (targets; TDC-style D/T error proxy)") {
-  ggplot2::ggplot(rel_tbl, ggplot2::aes(x = pep_mean_targets, y = err_hat_target)) +
+  ggplot2::ggplot(rel_tbl, ggplot2::aes(x = .data$pep_mean_targets, y = .data$err_hat_target)) +
     ggplot2::geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "grey50") +
-    ggplot2::geom_point(ggplot2::aes(size = n_target), alpha = 0.8) +
+    ggplot2::geom_point(ggplot2::aes(size = .data$n_target), alpha = 0.8) +
     ggplot2::scale_size_continuous(range = c(2, 10)) +
-    ggplot2::coord_cartesian(xlim = c(0, max(rel_tbl$pep_mean_targets, na.rm = TRUE)),
-                             ylim = c(0, 1)) +
+    ggplot2::coord_cartesian(
+      xlim = c(0, max(rel_tbl$pep_mean_targets, na.rm = TRUE)),
+      ylim = c(0, 1)
+    ) +
     ggplot2::labs(
       title = title,
       x = "Mean predicted PEP (targets in bin)",
@@ -329,28 +314,22 @@ dfdr_plot_p_density_by_decoy <- function(x,
   if (!"p" %in% names(x)) rlang::abort("`x` must contain a `p` column.")
 
   df <- x |>
-    dplyr::filter(is.finite(p), p > 0, p <= p_max) |>
+    dplyr::filter(is.finite(.data$p), .data$p > 0, .data$p <= p_max) |>
     dplyr::mutate(
-      class = ifelse(is_decoy, "Decoy", "Target"),
-      xval = if (log10_x) -log10(pmax(p, eps)) else p
+      class = dplyr::if_else(.data$is_decoy, "Decoy", "Target"),
+      xval = if (log10_x) -log10(pmax(.data$p, eps)) else .data$p
     )
 
   xlab <- if (log10_x) expression(-log[10](p)) else "p"
 
-  ggplot2::ggplot(df, ggplot2::aes(x = xval, color = class, fill = class)) +
-    ggplot2::geom_density(
-      linewidth = 1,
-      alpha = 0.25,
-      bw = bw,
-      adjust = adjust,
-      na.rm = TRUE
-    ) +
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$xval, color = .data$class, fill = .data$class)) +
+    ggplot2::geom_density(linewidth = 1, alpha = 0.25, bw = bw, adjust = adjust, na.rm = TRUE) +
     ggplot2::scale_color_manual(values = c(Target = "#2b8cbe", Decoy = "#d7301f")) +
     ggplot2::scale_fill_manual(values = c(Target = "#2b8cbe", Decoy = "#d7301f")) +
     ggplot2::labs(
       title = title,
-      subtitle = if (log10_x) sprintf("Using -log10(p); computed p truncated to p ≤ %.2g", p_max)
-      else sprintf("Computed p truncated to p ≤ %.2g", p_max),
+      subtitle = if (log10_x) sprintf("Using -log10(p); p truncated to p <= %.2g", p_max)
+      else sprintf("p truncated to p <= %.2g", p_max),
       x = xlab, y = "Density",
       color = NULL, fill = NULL
     ) +
@@ -374,7 +353,7 @@ dfdr_plot_p_density_by_decoy <- function(x,
 #'   "histo","langaas","pounds","abh","slim". (Do not use "ALL" here.)
 #' @param nbins,pz Passed to cp4p::estim.pi0().
 #' @param t_grid Grid of t values in (0,1] at which to evaluate the curve.
-#' @param add_one If TRUE, uses R(t) := #{p <= t} + 1 to avoid division by zero at tiny t.
+#' @param r_min Numeric value, uses to compute R(t) := #{p <= t} + r_min to avoid division by zero at tiny t.
 #' @param cap_one If TRUE, caps FDR_hat at 1.
 #'
 #' @return A list with:

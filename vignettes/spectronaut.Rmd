@@ -1,13 +1,13 @@
 ---
-  title: "diagFDR: generic diagnostics from Spectronaut exports"
+title: "diagFDR: generic diagnostics from Spectronaut exports"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{diagFDR: generic PSM diagnostics from mzIdentML (.mzid)}
-%\VignetteEngine{knitr::rmarkdown}
-%\VignetteEncoding{UTF-8}
+  %\VignetteIndexEntry{diagFDR: generic elution groups diagnostics from Spectronaut (tsv report)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
 ---
 
-  ```{r setup, include=FALSE}
+```{r setup, include=FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
@@ -70,7 +70,7 @@ x_toy <- as_dfdr_tbl(
 )
 
 diag <- dfdr_run_all(
-  xs = list(mzid_PSM = x_toy),
+  xs = list(univ = x_toy),
   alpha_main = 0.01,
   alphas = c(1e-4, 5e-4, 1e-3, 2e-3, 5e-3, 1e-2, 2e-2, 5e-2, 1e-1, 2e-1),
   eps = 0.2,
@@ -130,9 +130,9 @@ univ_runwise <- spectronaut_runxprecursor(
 )
 
 # Run diagnostics
-library(diagFDR)
 diag <- dfdr_run_all(
-      list(runwise = univ_runwise),compute_pseudo_pvalues=TRUE
+      list(runwise = univ_runwise),
+      compute_pseudo_pvalues=TRUE
  )
 
 # Export outputs

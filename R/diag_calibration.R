@@ -13,24 +13,26 @@
 #' @export
 dfdr_pep_reliability <- function(x, binwidth = 0.05, n_min = 200, pep_max = 0.5) {
   validate_dfdr_tbl(x)
-  if (all(is.na(x$pep))) rlang::abort("No PEP available (pep is all NA).")
+  if (!"pep" %in% names(x) || all(is.na(x$pep))) rlang::abort("No PEP available (pep is all NA).")
 
   brks <- seq(0, 1, by = binwidth)
   if (utils::tail(brks, 1) < 1) brks <- c(brks, 1)
 
   bins <- x |>
-    dplyr::filter(is.finite(pep), pep >= 0, pep <= 1) |>
-    dplyr::mutate(bin = cut(pep, breaks = brks, include.lowest = TRUE)) |>
-    dplyr::group_by(bin) |>
+    dplyr::filter(is.finite(.data$pep), .data$pep >= 0, .data$pep <= 1) |>
+    dplyr::mutate(bin = cut(.data$pep, breaks = brks, include.lowest = TRUE)) |>
+    dplyr::group_by(.data$bin) |>
     dplyr::summarise(
-      pep_mean = mean(pep),
-      decoy_rate = mean(is_decoy),
+      pep_mean = mean(.data$pep),
+      decoy_rate = mean(.data$is_decoy),
       n = dplyr::n(),
       .groups = "drop"
     ) |>
-    dplyr::filter(is.finite(pep_mean))
+    dplyr::filter(is.finite(.data$pep_mean))
 
-  bins_use <- bins |> dplyr::filter(n >= n_min, pep_mean <= pep_max)
+  bins_use <- bins |>
+    dplyr::filter(.data$n >= n_min, .data$pep_mean <= pep_max)
+
   IPE <- if (nrow(bins_use) > 0) {
     sum((bins_use$n / sum(bins_use$n)) * abs(bins_use$pep_mean - bins_use$decoy_rate))
   } else {
@@ -84,9 +86,9 @@ dfdr_sumpep <- function(x, alphas) {
 #' @return A list with elements \code{bands} (tibble) and \code{pooled} (tibble).
 #' @export
 dfdr_equal_chance_qbands <- function(x,
-                                      breaks = c(0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
-                                      low_conf = c(0.2, 0.5),
-                                      min_N = 2000) {
+                                     breaks = c(0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
+                                     low_conf = c(0.2, 0.5),
+                                     min_N = 2000) {
   validate_dfdr_tbl(x)
 
   meta <- attr(x, "meta") %||% list()
@@ -99,22 +101,23 @@ dfdr_equal_chance_qbands <- function(x,
   if (max(breaks_use) < qmax) breaks_use <- c(breaks_use, qmax)
 
   dd <- x |>
-    dplyr::filter(is.finite(q), q >= 0, q <= qmax) |>
-    dplyr::mutate(qbin = cut(q, breaks = breaks_use, include.lowest = TRUE, right = TRUE))
+    dplyr::filter(is.finite(.data$q), .data$q >= 0, .data$q <= qmax) |>
+    dplyr::mutate(qbin = cut(.data$q, breaks = breaks_use, include.lowest = TRUE, right = TRUE))
 
   bands <- dd |>
-    dplyr::group_by(qbin) |>
+    dplyr::group_by(.data$qbin) |>
     dplyr::summarise(
       n = dplyr::n(),
-      n_decoy = sum(is_decoy),
-      decoy_frac = n_decoy / n,
-      q_mean = mean(q),
+      n_decoy = sum(.data$is_decoy),
+      decoy_frac = .data$n_decoy / .data$n,
+      q_mean = mean(.data$q),
       .groups = "drop"
     ) |>
-    dplyr::arrange(q_mean)
+    dplyr::arrange(.data$q_mean)
 
   lo <- low_conf[1]; hi <- low_conf[2]
-  test_tbl <- bands |> dplyr::filter(is.finite(q_mean), q_mean >= lo, q_mean <= hi)
+  test_tbl <- bands |>
+    dplyr::filter(is.finite(.data$q_mean), .data$q_mean >= lo, .data$q_mean <= hi)
 
   N_test <- sum(test_tbl$n)
   N_D_test <- sum(test_tbl$n_decoy)
@@ -135,8 +138,11 @@ dfdr_equal_chance_qbands <- function(x,
     pass_minN = N_test >= min_N
   )
 
-  list(bands = bands, pooled = pooled,
-       params = list(breaks = breaks, low_conf = low_conf, min_N = min_N))
+  list(
+    bands = bands,
+    pooled = pooled,
+    params = list(breaks = breaks, low_conf = low_conf, min_N = min_N)
+  )
 }
 
 
@@ -154,21 +160,27 @@ dfdr_pep_decoy_sanity <- function(x, thresholds = c(0.01, 0.05, 0.1, 0.2)) {
   if (!"pep" %in% names(x)) rlang::abort("`x` must contain a `pep` column.")
 
   pep <- x$pep
-  ok <- is.finite(pep)
+  ok <- is.finite(pep) & pep >= 0 & pep <= 1
   pep <- pep[ok]
   is_decoy <- x$is_decoy[ok]
 
-  tibble::tibble(threshold = thresholds) |>
-    dplyr::rowwise() |>
-    dplyr::mutate(
-      n_decoy = sum(is_decoy),
-      n_target = sum(!is_decoy),
-      decoy_le = sum(is_decoy & pep <= threshold),
-      target_le = sum((!is_decoy) & pep <= threshold),
+  n_decoy <- sum(is_decoy)
+  n_target <- sum(!is_decoy)
+
+  purrr::map_dfr(thresholds, function(th) {
+    decoy_le <- sum(is_decoy & pep <= th)
+    target_le <- sum((!is_decoy) & pep <= th)
+
+    tibble::tibble(
+      threshold = th,
+      n_decoy = n_decoy,
+      n_target = n_target,
+      decoy_le = decoy_le,
+      target_le = target_le,
       frac_decoy_le = decoy_le / pmax(n_decoy, 1),
       frac_target_le = target_le / pmax(n_target, 1)
-    ) |>
-    dplyr::ungroup()
+    )
+  })
 }
 
 
@@ -188,25 +200,38 @@ dfdr_pep_reliability_tdc <- function(x,
   validate_dfdr_tbl(x)
   if (!"pep" %in% names(x)) rlang::abort("`x` must contain a `pep` column.")
 
-  df <- x |>
-    dplyr::filter(is.finite(pep), pep >= min(breaks), pep <= max(breaks)) |>
-    dplyr::mutate(bin = cut(pep, breaks = breaks, include.lowest = TRUE, right = TRUE))
+  breaks <- sort(unique(breaks))
+  if (length(breaks) < 2) rlang::abort("`breaks` must have at least two values.")
 
-  # Summarise per bin:
+  df <- x |>
+    dplyr::filter(is.finite(.data$pep), .data$pep >= min(breaks), .data$pep <= max(breaks)) |>
+    dplyr::mutate(
+      bin_i = findInterval(.data$pep, vec = breaks, rightmost.closed = TRUE),
+      bin_i = dplyr::if_else(.data$bin_i < 1L | .data$bin_i >= length(breaks), NA_integer_, .data$bin_i)
+    ) |>
+    dplyr::filter(!is.na(.data$bin_i))
+
+  mids <- (breaks[-length(breaks)] + breaks[-1]) / 2
+
   out <- df |>
-    dplyr::group_by(bin) |>
+    dplyr::group_by(.data$bin_i) |>
     dplyr::summarise(
-      n_target = sum(!is_decoy),
-      n_decoy = sum(is_decoy),
-      pep_mean_targets = mean(pep[!is_decoy], na.rm = TRUE),
-      pep_mean_all = mean(pep, na.rm = TRUE),
-      # error proxy among targets:
-      err_hat_target = pmin(1, (n_decoy + add_decoy) / pmax(n_target, 1)),
+      pep_lo = breaks[unique(.data$bin_i)],
+      pep_hi = breaks[unique(.data$bin_i) + 1L],
+      pep_bin_mid = mids[unique(.data$bin_i)],
+      n_target = sum(!.data$is_decoy),
+      n_decoy = sum(.data$is_decoy),
+      pep_mean_targets = mean(.data$pep[!.data$is_decoy], na.rm = TRUE),
+      pep_mean_all = mean(.data$pep, na.rm = TRUE),
+      err_hat_target = pmin(1, (.data$n_decoy + add_decoy) / pmax(.data$n_target, 1)),
       .groups = "drop"
     ) |>
     dplyr::mutate(
-      pep_bin_mid = purrr::map_dbl(strsplit(gsub("\\(|\\]|\\s", "", as.character(bin)), ","), \(ab) mean(as.numeric(ab)))
-    )
+      bin = sprintf("(%.3g, %.3g]", .data$pep_lo, .data$pep_hi)
+    ) |>
+    dplyr::select(.data$bin, .data$n_target, .data$n_decoy,
+                  .data$pep_mean_targets, .data$pep_mean_all,
+                  .data$err_hat_target, .data$pep_bin_mid)
 
   out
 }

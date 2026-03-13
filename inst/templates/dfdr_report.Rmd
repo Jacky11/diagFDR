@@ -19,17 +19,63 @@ out_dir <- params$out_dir
 
 `%||%` <- function(a, b) if (!is.null(a)) a else b
 
-md_kable <- function(x, digits = 4) {
+md_kable <- function(x, digits = 4, escape = FALSE) {
   if (!is.data.frame(x) || nrow(x) == 0) return(knitr::kable(data.frame(note = "(empty)")))
-  knitr::kable(x, digits = digits)
+  knitr::kable(x, digits = digits, escape = escape)
 }
 
+# -------------------------
+# Icon rendering (HTML only)
+# -------------------------
+icon_ok      <- "&#x2713;"          # ✓
+icon_caution <- "&#x26A0;"          # ⚠
+icon_problem <- "&#x26A0;&#xFE0F;"  # ⚠️
+
+flag_to_html <- function(s) {
+  if (is.null(s) || length(s) == 0 || all(is.na(s))) return("n/a")
+  s <- as.character(s)
+
+  if (s %in% c("NA", "n/a")) return("n/a")
+  if (identical(s, "OK")) return(icon_ok)
+  if (grepl("^PROBLEM", s)) return(paste0(icon_problem, " ", sub("^PROBLEM_?", "", s)))
+  if (grepl("^CAUTION", s)) return(paste0(icon_caution, " ", sub("^CAUTION_?", "", s)))
+  s
+}
+
+status_to_html <- function(s) {
+  s <- as.character(s)
+  if (is.na(s) || s == "" || s %in% c("NA", "n/a")) return("n/a")
+  if (s == "VALID") return(paste0(icon_ok, " Valid"))
+  if (s == "CAUTION") return(paste0(icon_caution, " Caution"))
+  if (s == "REVIEW_NEEDED") return(paste0(icon_problem, " Review needed"))
+  s
+}
+
+headline_display <- function(tbl) {
+  if (!is.data.frame(tbl) || nrow(tbl) == 0) return(tbl)
+  out <- tbl
+
+  flag_cols <- names(out)[grepl("^flag_", names(out))]
+  for (cc in flag_cols) {
+    out[[cc]] <- vapply(out[[cc]], flag_to_html, character(1))
+  }
+  if ("status" %in% names(out)) {
+    out[["status"]] <- vapply(out[["status"]], status_to_html, character(1))
+  }
+  out
+}
+
+# -------------------------
+# Pull tables/plots/metadata
+# -------------------------
 # Prefer package helper if present
 if (exists("dfdr_summary_headline", mode = "function")) {
   summary_tbl <- dfdr_summary_headline(diag)
 } else {
   summary_tbl <- diag$tables$headline
 }
+
+summary_tbl_disp <- headline_display(summary_tbl)
 
 alpha_main <- (diag$params %||% list())$alpha_main %||% NA_real_
 pnames <- names(diag$plots %||% list())
@@ -46,6 +92,16 @@ meta_tbl <- purrr::imap_dfr(diag$objects %||% list(), function(x, nm) {
     p_source = meta$p_source %||% NA_character_
   )
 })
+
+# helper: choose box class from ASCII flag code
+flag_class <- function(flag_value) {
+  flag_value <- as.character(flag_value)
+  if (is.na(flag_value) || flag_value %in% c("NA", "n/a")) return("metric-caution")
+  if (flag_value == "OK") return("metric-ok")
+  if (grepl("^PROBLEM", flag_value)) return("metric-problem")
+  if (grepl("^CAUTION", flag_value)) return("metric-caution")
+  "metric-caution"
+}
 ```
 
 ```{css, echo=FALSE}
@@ -120,154 +176,153 @@ This report was generated from the output of `dfdr_run_all()`.
 
 ---
 
-## 🎯 Executive Summary
+## Executive Summary
 
 ```{r executive, results='asis'}
-# Check if flagged columns exist
 has_flags <- all(c("status", "interpretation") %in% names(summary_tbl))
 
-if (has_flags) {
-  # Identify problematic lists
+if (!has_flags) {
+  cat('<div class="alert-info">\n')
+  cat('<p><em>Automated flagging not available in this version. Please review metrics manually.</em></p>\n')
+  cat('</div>\n\n')
+} else {
+
   problems <- summary_tbl |>
-    dplyr::filter(grepl("⚠️", status)) |>
+    dplyr::filter(status == "REVIEW_NEEDED") |>
     dplyr::pull(list)
-  
+
   cautions <- summary_tbl |>
-    dplyr::filter(status == "⚠ Caution") |>
+    dplyr::filter(status == "CAUTION") |>
     dplyr::pull(list)
-  
+
   valid <- summary_tbl |>
-    dplyr::filter(status == "✓ Valid") |>
+    dplyr::filter(status == "VALID") |>
     dplyr::pull(list)
-  
-  # Critical issues
+
   if (length(problems) > 0) {
     cat('<div class="alert-danger">\n')
-    cat('<h3>⚠️ CRITICAL ISSUES DETECTED</h3>\n')
+    cat('<h3>CRITICAL ISSUES DETECTED</h3>\n')
     for (lst in problems) {
       row <- summary_tbl |> dplyr::filter(list == lst)
+      row_disp <- summary_tbl_disp |> dplyr::filter(list == lst)
+
       cat(sprintf('<p><strong>List "%s":</strong> %s</p>\n', lst, row$interpretation))
       cat('<ul>\n')
-      if ("flag_FDR" %in% names(row) && row$flag_FDR != "✓") {
-        cat(sprintf('<li>FDR: %s (empirical FDR = %.2f%%)</li>\n', row$flag_FDR, row$FDR_hat * 100))
+
+      if ("flag_FDR" %in% names(row) && !is.na(row$flag_FDR) && row$flag_FDR != "OK") {
+        cat(sprintf('<li>FDR: %s (empirical FDR = %.2f%%)</li>\n', row_disp$flag_FDR, row$FDR_hat * 100))
       }
-      if ("flag_IPE" %in% names(row) && row$flag_IPE != "✓" && row$flag_IPE != "n/a") {
-        cat(sprintf('<li>PEP calibration: %s (IPE = %.3f)</li>\n', row$flag_IPE, row$IPE))
+      if ("flag_IPE" %in% names(row) && !is.na(row$flag_IPE) && row$flag_IPE != "OK" && row$flag_IPE != "NA") {
+        if ("IPE" %in% names(row) && is.finite(row$IPE)) {
+          cat(sprintf('<li>PEP calibration: %s (IPE = %.3f)</li>\n', row_disp$flag_IPE, row$IPE))
+        } else {
+          cat(sprintf('<li>PEP calibration: %s</li>\n', row_disp$flag_IPE))
+        }
       }
-      if ("flag_equalchance" %in% names(row) && row$flag_equalchance != "✓" && row$flag_equalchance != "n/a") {
-        cat(sprintf('<li>Equal-chance: %s (|effect| = %.3f)</li>\n', row$flag_equalchance, row$effect_abs))
+      if ("flag_equalchance" %in% names(row) && !is.na(row$flag_equalchance) && row$flag_equalchance != "OK" && row$flag_equalchance != "NA") {
+        if ("effect_abs" %in% names(row) && is.finite(row$effect_abs)) {
+          cat(sprintf('<li>Equal-chance: %s (|effect| = %.3f)</li>\n', row_disp$flag_equalchance, row$effect_abs))
+        } else {
+          cat(sprintf('<li>Equal-chance: %s</li>\n', row_disp$flag_equalchance))
+        }
       }
-      if ("flag_Dalpha" %in% names(row) && row$flag_Dalpha != "✓") {
-        cat(sprintf('<li>Decoy support: %s (D_α = %d)</li>\n', row$flag_Dalpha, row$D_alpha))
+      if ("flag_Dalpha" %in% names(row) && !is.na(row$flag_Dalpha) && row$flag_Dalpha != "OK" && row$flag_Dalpha != "NA") {
+        cat(sprintf('<li>Decoy support: %s (D_alpha = %d)</li>\n', row_disp$flag_Dalpha, row$D_alpha))
       }
-      if ("flag_CV" %in% names(row) && row$flag_CV != "✓") {
-        cat(sprintf('<li>Stability: %s (CV = %.3f)</li>\n', row$flag_CV, row$CV_hat))
+      if ("flag_CV" %in% names(row) && !is.na(row$flag_CV) && row$flag_CV != "OK" && row$flag_CV != "NA") {
+        cat(sprintf('<li>Stability: %s (CV = %.3f)</li>\n', row_disp$flag_CV, row$CV_hat))
       }
       cat('</ul>\n')
     }
     cat('</div>\n\n')
   }
-  
-  # Valid lists
+
   if (length(valid) > 0) {
     cat('<div class="alert-success">\n')
-    cat('<h3>✓ VALID LISTS</h3>\n')
+    cat('<h3>VALID LISTS</h3>\n')
     cat('<ul>\n')
     for (lst in valid) {
       row <- summary_tbl |> dplyr::filter(list == lst)
       meta <- meta_tbl |> dplyr::filter(list == lst)
-      cat(sprintf('<li><strong>%s</strong> (%s scope, %s unit): FDR=%.2f%%, D_α=%d, CV=%.3f</li>\n', 
-                  lst, meta$scope, meta$unit, row$FDR_hat * 100, row$D_alpha, row$CV_hat))
+      cat(sprintf(
+        '<li><strong>%s</strong> (%s scope, %s unit): FDR=%.2f%%, D_alpha=%d, CV=%.3f</li>\n',
+        lst, meta$scope, meta$unit, row$FDR_hat * 100, row$D_alpha, row$CV_hat
+      ))
     }
     cat('</ul>\n')
     cat('</div>\n\n')
   }
-  
-  # Warnings
+
   if (length(cautions) > 0) {
     cat('<div class="alert-warning">\n')
-    cat('<h3>⚠ LISTS WITH WARNINGS</h3>\n')
+    cat('<h3>LISTS WITH WARNINGS</h3>\n')
     for (lst in cautions) {
       row <- summary_tbl |> dplyr::filter(list == lst)
       cat(sprintf('<p><strong>List "%s":</strong> %s</p>\n', lst, row$interpretation))
     }
     cat('</div>\n\n')
   }
-  
-} else {
-  cat('<div class="alert-info">\n')
-  cat('<p><em>Automated flagging not available in this version. Please review metrics manually.</em></p>\n')
-  cat('</div>\n\n')
 }
 ```
 
 ### Quick Metrics Dashboard
 
 ```{r dashboard, results='asis'}
-if (has_flags) {
+if (!has_flags) {
+  cat('<p><em>Dashboard not available without flagged headline table.</em></p>\n')
+} else {
   for (i in seq_len(nrow(summary_tbl))) {
     row <- summary_tbl[i, ]
-    cat(sprintf('<div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">\n'))
-    cat(sprintf('<h4>%s <span style="float:right;">%s</span></h4>\n', row$list, row$status))
-    
-    # Metrics row
+    row_disp <- summary_tbl_disp[i, ]
+
+    cat('<div style="margin: 15px 0; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">\n')
+    cat(sprintf('<h4>%s <span style="float:right;">%s</span></h4>\n', row$list, row_disp$status))
+
     cat('<div>\n')
-    
-    # FDR metric
+
     if ("flag_FDR" %in% names(row)) {
-      fdr_class <- if (row$flag_FDR == "✓") "metric-ok" else if (grepl("⚠️", row$flag_FDR)) "metric-problem" else "metric-caution"
+      fdr_class <- flag_class(row$flag_FDR)
       cat(sprintf('<span class="metric-box %s">FDR: %.2f%%</span>\n', fdr_class, row$FDR_hat * 100))
     }
-    
-    # Decoy support
+
     if ("flag_Dalpha" %in% names(row)) {
-      d_class <- if (row$flag_Dalpha == "✓") "metric-ok" else if (grepl("⚠️", row$flag_Dalpha)) "metric-problem" else "metric-caution"
-      cat(sprintf('<span class="metric-box %s">D_α: %d</span>\n', d_class, row$D_alpha))
+      d_class <- flag_class(row$flag_Dalpha)
+      cat(sprintf('<span class="metric-box %s">D_alpha: %d</span>\n', d_class, row$D_alpha))
     }
-    
-    # Stability
+
     if ("flag_CV" %in% names(row)) {
-      cv_class <- if (row$flag_CV == "✓") "metric-ok" else if (grepl("⚠️", row$flag_CV)) "metric-problem" else "metric-caution"
+      cv_class <- flag_class(row$flag_CV)
       cat(sprintf('<span class="metric-box %s">CV: %.3f</span>\n', cv_class, row$CV_hat))
     }
-    
-    # PEP calibration (if available)
-    if ("IPE" %in% names(row) && !is.na(row$IPE)) {
-      ipe_class <- if (row$flag_IPE == "✓") "metric-ok" else if (grepl("⚠️", row$flag_IPE)) "metric-problem" else "metric-caution"
+
+    if ("flag_IPE" %in% names(row) && "IPE" %in% names(row) && is.finite(row$IPE)) {
+      ipe_class <- flag_class(row$flag_IPE)
       cat(sprintf('<span class="metric-box %s">IPE: %.3f</span>\n', ipe_class, row$IPE))
     }
-    
+
     cat('</div>\n')
     cat('</div>\n\n')
   }
-} else {
-  cat('<p><em>Dashboard not available without flagged headline table.</em></p>\n')
 }
 ```
 
 ---
 
-## 📋 Headline Summary (Table)
+## Headline Summary (Table)
 
 ```{r headline-simple}
-# Show key columns
 key_cols <- c("list", "T_alpha", "D_alpha", "FDR_hat", "CV_hat")
 
-# Add IPE if available
-if ("IPE" %in% names(summary_tbl)) {
-  key_cols <- c(key_cols, "IPE")
-}
+if ("IPE" %in% names(summary_tbl)) key_cols <- c(key_cols, "IPE")
 
-# Add flag columns if available
 if (has_flags) {
   flag_cols <- names(summary_tbl)[grepl("^flag_", names(summary_tbl))]
   key_cols <- c(key_cols, flag_cols, "status")
 }
 
-# Select available columns
-display_cols <- key_cols[key_cols %in% names(summary_tbl)]
+display_cols <- key_cols[key_cols %in% names(summary_tbl_disp)]
 
-summary_tbl |>
+summary_tbl_disp |>
   dplyr::select(dplyr::all_of(display_cols)) |>
   md_kable()
 ```
@@ -276,14 +331,14 @@ summary_tbl |>
 <summary>Click to show full headline table (all columns)</summary>
 
 ```{r headline-full}
-md_kable(summary_tbl, digits = 3)
+md_kable(summary_tbl_disp, digits = 3)
 ```
 
 </details>
 
 ---
 
-## 📋 List Metadata (scope / unit / provenance)
+## List Metadata (scope / unit / provenance)
 
 ```{r metadata}
 md_kable(meta_tbl)
@@ -291,14 +346,14 @@ md_kable(meta_tbl)
 
 ---
 
-## 📈 Score Distributions (Target vs Decoy)
+## Score Distributions (Target vs Decoy)
 
 <div class="alert-info">
 **Interpretation guide:**
 
 - **Score distributions**: Good separation means target distribution shifted right, minimal overlap with decoys
 - **q-value distributions (fallback if no scores)**: Target q-values should be concentrated near 0; decoys more uniform. Large overlap suggests poor discrimination.
-- **Very few decoys at high scores / low q-values**: Leads to sparse tail support (check D_α)
+- **Very few decoys at high scores / low q-values**: Leads to sparse tail support (check D_alpha)
 
 </div>
 
@@ -319,15 +374,15 @@ if (length(score_plots) == 0) {
 
 ---
 
-## 🔍 Stability Diagnostics
+## Stability Diagnostics
 
 <div class="alert-info">
 **What to look for:**
 
-- **D_α curve**: Should remain >50 at operating thresholds. U-shape indicates granularity at extreme cutoffs.
+- **D_alpha curve**: Should remain >50 at operating thresholds. U-shape indicates granularity at extreme cutoffs.
 - **CV curve**: Should be <0.15 at headline threshold. High CV = unstable estimate.
-- **D_α_win**: Local decoy support near cutoff. <20 indicates sparse boundary support.
-- **Elasticity**: Change in list size for small cutoff perturbation. High Jaccard index (>0.9) values indicate stability.
+- **D_alpha_win**: Local decoy support near cutoff. <20 indicates sparse boundary support.
+- **Elasticity**: High Jaccard index (>0.9) indicates stability.
 </div>
 
 ### Decoy tail support and instability proxy
@@ -357,22 +412,20 @@ if (!is.null(diag$plots$elasticity)) print(diag$plots$elasticity)
 
 ---
 
-## 🎯 Calibration Diagnostics (target–decoy)
+## Calibration Diagnostics (target-decoy)
 
 <div class="alert-info">
 **What to look for:**
 
 - **Equal-chance**: Decoy fraction in each q-band should be ~50%. Large deviations suggest scoring bias.
-- **PEP reliability**: Observed error rate should match predicted PEP. IPE >0.05 indicates miscalibration.
+- **PEP reliability**: Observed error rate should match predicted PEP. IPE > 0.05 indicates miscalibration.
 </div>
 
 ### Equal-chance plausibility (q-band decoy fractions)
 
 ```{r equal-chance-table}
 ecp <- diag$tables$equal_chance_pooled
-if (is.data.frame(ecp) && nrow(ecp) > 0) {
-  md_kable(ecp)
-}
+if (is.data.frame(ecp) && nrow(ecp) > 0) md_kable(ecp)
 ```
 
 ```{r equal-chance-plots, results='asis'}
@@ -384,24 +437,16 @@ if (length(eq_plots) == 0) {
     list_name <- sub("^equal_chance__", "", nm)
     cat("\n#### ", list_name, "\n\n", sep = "")
     print(diag$plots[[nm]])
-    cat('\n\n')
+    cat("\n\n")
   }
 }
 ```
 
-### PEP reliability
-
-<div class="alert-info">
-- **PEP sanity (decoys vs targets)**: Decoys should generally have *larger* PEP than targets. A large fraction of decoys at small PEP (e.g. ≤0.1) indicates PEP is not behaving like a calibrated error probability on this exported universe.
-- **PEP reliability (default)**: Observed decoy fraction vs predicted PEP is a rough internal consistency check and can be misleading for some tools.
-- **PEP reliability (TDC-style)**: Compares mean predicted PEP (targets only) to a TDC-style error proxy among targets (≈ D/T within PEP bins). Persistent upward deviation suggests optimistic PEPs.
-</div>
+### PEP reliability (bins + plots)
 
 ```{r pep-ipe-table}
 ipe <- diag$tables$pep_IPE
-if (is.data.frame(ipe) && nrow(ipe) > 0) {
-  md_kable(ipe)
-}
+if (is.data.frame(ipe) && nrow(ipe) > 0) md_kable(ipe)
 ```
 
 ```{r pep-plots, results='asis'}
@@ -413,14 +458,14 @@ if (length(pep_plots) == 0) {
     list_name <- sub("^pep_reliability__", "", nm)
     cat("\n#### ", list_name, "\n\n", sep = "")
     print(diag$plots[[nm]])
-    cat('\n\n')
+    cat("\n\n")
   }
 }
 ```
 
-### PEP sanity: decoy PEP rates + target/decoy PEP densities 
+### PEP sanity: decoy PEP rates + target/decoy PEP densities
 
-```{r pep-sanity-table}
+```{r pep-sanity-table, results='asis'}
 ps <- diag$tables$pep_decoy_sanity
 if (is.data.frame(ps) && nrow(ps) > 0) {
   md_kable(ps, digits = 4)
@@ -434,7 +479,7 @@ if (length(pep_den_plots) == 0) {
 } else {
   for (nm in pep_den_plots) {
     list_name <- sub("^pep_density__", "", nm)
-    cat("\n ", list_name, "\n\n", sep = "")
+    cat("\n#### ", list_name, "\n\n", sep = "")
     print(diag$plots[[nm]])
     cat("\n\n")
   }
@@ -443,7 +488,7 @@ if (length(pep_den_plots) == 0) {
 
 ### PEP reliability (TDC-style; targets only)
 
-```{r pep-tdc-style}
+```{r pep-tdc-style, results='asis'}
 pt <- diag$tables$pep_reliability_tdc
 if (is.data.frame(pt) && nrow(pt) > 0) {
   md_kable(pt, digits = 4)
@@ -466,32 +511,11 @@ if (length(pep_tdc_plots) == 0) {
 
 ---
 
-## 📊 Calibration Diagnostics (p-values) 
+## Calibration Diagnostics (p-values)
 
 <div class="alert-info">
-**What to look for:**
-
-- **P-value calibration**: 
-  - CDF of 1-p vs 1-p should be a straight line when 1-p is not too high, with a slope coefficient equal to the proportion of true null hypotheses π₀
-  - For decoys: π₀ has to be close to 1 and the plot should be close to the y=x line
-  - For targets: π₀ is an internal estimate of the null fraction among targets (i.e., proportion of potentially incorrectly identified targets).
-
-- **Estimated FDR**: 
-  - Estimated FDR in function of the threshold t on the p-values using an estimator of π₀.
-  - For decoys: the estimated FDR should be around 100%.
-  - For targets: it should increase with t until the estimated π₀.
-
-- **π₀ estimate**: 
-  - Proportion of true null hypotheses (incorrect identifications)
-  - Should be **stable across λ** (flat line)
-
-- **BH elasticity**: 
-  - High Jaccard (>0.95) indicates stable BH lists
-  - Low Jaccard at operating thresholds suggests sensitivity to cutoff choice
-  
-**Note**: For pseudo p-values derived from scores, conservatism indicates the transformation is **cautious**, which is appropriate for diagnostic use.
+This section is shown only when a \texttt{p} column is available (true p-values or pseudo-p-values derived from scores).
 </div>
-
 
 ### (Pseudo-)p-value density (targets vs decoys)
 
@@ -517,14 +541,14 @@ if (length(p_plots) == 0) {
   for (nm in p_plots) {
     cat("\n### ", nm, "\n\n", sep = "")
     print(diag$plots[[nm]])
-    cat('\n\n')
+    cat("\n\n")
   }
 }
 ```
 
 ---
 
-## 🔄 Scope Comparison (if multiple lists)
+## Scope Comparison (if multiple lists)
 
 ```{r scope-comparison, results='asis'}
 if (length(diag$objects) > 1) {
@@ -536,46 +560,45 @@ if (length(diag$objects) > 1) {
   cat('<li>J < 0.7: Strong disagreement - scope is critical</li>\n')
   cat('</ul>\n')
   cat('</div>\n\n')
-  
+
   if (!is.null(diag$plots$scope_disagreement)) {
     print(diag$plots$scope_disagreement)
   } else {
-    cat('\n(Scope disagreement matrix not computed.)\n\n')
+    cat("\n(Scope disagreement matrix not computed.)\n\n")
   }
 } else {
-  cat('\n(Only one list provided; scope comparison not applicable.)\n\n')
+  cat("\n(Only one list provided; scope comparison not applicable.)\n\n")
 }
 ```
 
 ---
 
-## 📁 Exported Artifacts
+## Exported Artifacts
 
 - **Tables directory:** `r normalizePath(out_dir, winslash = "/", mustWork = FALSE)`
 - **Plots directory:** `r normalizePath(file.path(out_dir, "plots"), winslash = "/", mustWork = FALSE)`
 
 ---
 
-## 📖 Appendix: Diagnostic Thresholds
+## Appendix: Diagnostic Thresholds
 
 The automated flags use these heuristic thresholds:
 
-| Metric | ✓ Valid | ⚠ Caution | ⚠️ Problem |
-|--------|---------|-----------|-----------|
-| **D_α** | ≥50 | 10–50 | <10 |
-| **CV** | <0.15 | 0.15–0.30 | >0.30 |
-| **D_α_win** | ≥20 | 5–20 | <5 |
-| **IPE** | ≤0.05 | 0.05–0.10 | >0.10 |
-| **FDR_hat** | ≤α×1.2 | α×1.2–α×1.5 | >α×1.5 |
-| **Equal-chance** | \|effect\|≤0.10 | 0.10–0.15 | >0.15 |
+| Metric | OK | CAUTION | PROBLEM |
+|--------|----|---------|---------|
+| **D_alpha** | >= 50 | 10--50 | < 10 |
+| **CV** | < 0.15 | 0.15--0.30 | > 0.30 |
+| **D_alpha_win** | >= 20 | 5--20 | < 5 |
+| **IPE** | <= 0.05 | 0.05--0.10 | > 0.10 |
+| **FDR_hat** | <= alpha*1.2 | alpha*1.2--alpha*1.5 | > alpha*1.5 |
+| **Equal-chance** | |effect| <= 0.10 | 0.10--0.15 | > 0.15 |
 
-These are **guidelines**, not absolute rules. Context matters!
+These are guidelines, not absolute rules.
 
 ---
 
 <div style="text-align: center; margin-top: 40px; padding: 20px; background-color: #f8f9fa; border-top: 2px solid #dee2e6;">
-**End of Report**  
+<strong>End of Report</strong><br/>
 Generated by diagFDR v`r utils::packageVersion("diagFDR")`
 </div>
-```
 

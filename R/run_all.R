@@ -188,9 +188,8 @@ dfdr_run_all <- function(xs,
   # Merge effect_abs from equal-chance pooled
   if (length(eqchance) > 0) {
     effect_tbl <- purrr::imap_dfr(eqchance, ~dplyr::mutate(.x$pooled, list = .y)) |>
-      dplyr::select(list, effect_abs)
-    headline <- headline |>
-      dplyr::left_join(effect_tbl, by = "list")
+      dplyr::select(.data$list, .data$effect_abs)
+    headline <- headline |> dplyr::left_join(effect_tbl, by = "list")
   }
 
   # ---- flag (with columns present but possibly NA)

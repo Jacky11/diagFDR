@@ -85,20 +85,17 @@ spectronaut_parse_decoy <- function(x) {
 #' @keywords internal
 spectronaut_recompute_q_from_score <- function(df) {
   df |>
-    dplyr::arrange(dplyr::desc(score)) |>  # Higher score = better
+    dplyr::arrange(dplyr::desc(.data$score)) |>
     dplyr::mutate(
       rank = dplyr::row_number(),
-      cumsum_decoy = cumsum(is_decoy),
+      cumsum_decoy = cumsum(.data$is_decoy),
       cumsum_total = dplyr::row_number(),
-      q_from_score = pmin(1, cumsum_decoy / cumsum_total)
+      q_from_score = pmin(1, .data$cumsum_decoy / .data$cumsum_total)
     ) |>
-    # Make q-values monotone
-    dplyr::arrange(dplyr::desc(rank)) |>
-    dplyr::mutate(
-      q_from_score = cummin(q_from_score)
-    ) |>
-    dplyr::arrange(rank) |>
-    dplyr::select(-rank, -cumsum_decoy, -cumsum_total)
+    dplyr::arrange(dplyr::desc(.data$rank)) |>
+    dplyr::mutate(q_from_score = cummin(.data$q_from_score)) |>
+    dplyr::arrange(.data$rank) |>
+    dplyr::select(-.data$rank, -.data$cumsum_decoy, -.data$cumsum_total)
 }
 
 #' Spectronaut -> runxprecursor universe (deduplicated within run by EG.PrecursorId)
@@ -189,13 +186,13 @@ spectronaut_runxprecursor <- function(rep,
       dplyr::group_by(run) |>
       dplyr::group_modify(~ spectronaut_recompute_q_from_score(.x)) |>
       dplyr::ungroup() |>
-      dplyr::mutate(q = q_from_score) |>
-      dplyr::select(-q_from_score, -q_original)
+      dplyr::mutate(q = .data$q_from_score) |>
+      dplyr::select(-.data$q_from_score, -(.data$q_original))
     q_source <- paste0(q_source, " (recomputed per run from ", score_col, ")")
   } else {
     dd <- dd |>
-      dplyr::mutate(q = q_original) |>
-      dplyr::select(-q_original) |>
+      dplyr::mutate(q = .data$q_original) |>
+      dplyr::select(-.data$q_original) |>
       dplyr::filter(is.finite(q), q >= 0, q <= 1)
   }
 

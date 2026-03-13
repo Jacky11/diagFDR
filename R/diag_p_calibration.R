@@ -109,18 +109,17 @@ dfdr_plot_p_calibration <- function(ecdf_tbl,
 }
 
 
-#' Plot p-value calibration (cp4p-style, ALL pi0 estimators) as ggplot2
+#' P-value calibration plot (cp4p-style), with multiple pi0 reference curves
 #'
-#' ggplot re-implementation of the "ALL" branch of cp4p::calibration.plot().
-#' Plots the empirical CDF of (1 - p) vs (1 - p), and overlays reference curves
-#' dr(abs) = pi0 * (abs - 1 + c) / c, where c = max(p).
+#' Plots ECDF of (1-p) against reference curves derived from cp4p::estim.pi0()
+#' using multiple pi0 estimation methods.
 #'
-#' @param x A dfdr_tbl (or data.frame) containing columns \code{id}, \code{is_decoy}, \code{p}.
-#' @param sel Which subset to plot: "all", "decoy", or "target" (case-insensitive).
-#' @param nbins,pz Passed to cp4p::estim.pi0.
-#' @param step Grid resolution for the x-axis (1 - p) grid.
-#' @param return_data If TRUE, returns a list(plot=..., pi0=..., data=...); else returns ggplot only.
-#' @return A ggplot object (default), or a list if \code{return_data=TRUE}.
+#' @param x A dfdr_tbl (or data.frame) containing columns id, is_decoy, p.
+#' @param sel Subset: "all", "decoy", or "target".
+#' @param nbins,pz Passed to cp4p::estim.pi0().
+#' @param step Grid step for abs = 1-p.
+#' @param return_data If TRUE, return plot + computed data.
+#' @return ggplot (or list if return_data=TRUE)
 #' @export
 dfdr_plot_p_calibration2 <- function(x,
                                      sel = c("all", "decoy", "target"),
@@ -131,22 +130,6 @@ dfdr_plot_p_calibration2 <- function(x,
   x <- .safe_df(x)
   .check_has_cols(x, c("id", "is_decoy", "p"))
 
-  if (!requireNamespace("ggplot2", quietly = TRUE)) {
-    rlang::abort("Package 'ggplot2' is required.")
-  }
-  if (!requireNamespace("dplyr", quietly = TRUE)) {
-    rlang::abort("Package 'dplyr' is required.")
-  }
-  if (!requireNamespace("tibble", quietly = TRUE)) {
-    rlang::abort("Package 'tibble' is required.")
-  }
-  if (!requireNamespace("cp4p", quietly = TRUE)) {
-    rlang::abort("Package 'cp4p' is required.")
-  }
-  if (!requireNamespace("purrr", quietly = TRUE)) {
-    rlang::abort("Package 'purrr' is required.")
-  }
-
   sel <- match.arg(tolower(sel), c("all", "decoy", "target"))
 
   xx <- x
@@ -155,6 +138,7 @@ dfdr_plot_p_calibration2 <- function(x,
 
   p <- suppressWarnings(as.numeric(xx$p))
   p <- p[is.finite(p) & p >= 0 & p <= 1]
+
   if (length(p) < 10) rlang::abort("Too few valid p-values to plot calibration.")
   if (all(p == 0) || all(p == 1)) rlang::abort("Degenerate p-values (all 0 or all 1); cannot plot calibration.")
 
@@ -181,17 +165,16 @@ dfdr_plot_p_calibration2 <- function(x,
 
   # dr(abs) = pi0 * (abs - 1 + c) / c, truncated at 0
   df_ref <- purrr::map_dfr(seq_along(methods), function(i) {
-    dr <- pi0_vec[i] * (abs_grid - 1 + cmax) / cmax
-    dr <- pmax(dr, 0)
+    dr_vec <- pi0_vec[i] * (abs_grid - 1 + cmax) / cmax
+    dr_vec <- pmax(dr_vec, 0)
     tibble::tibble(
       abs = abs_grid,
-      dr = dr,
+      dr = dr_vec,
       method = methods[i],
       pi0 = pi0_vec[i]
     )
   })
 
-  # A stable manual palette (close to cp4p spirit, but ggplot-friendly)
   pal <- c(
     "st.spline" = "chartreuse2",
     "st.boot"   = "chartreuse4",
@@ -203,28 +186,29 @@ dfdr_plot_p_calibration2 <- function(x,
     "slim"      = "blue3"
   )
 
-  g <- ggplot2::ggplot(df_main, ggplot2::aes(x = abs, y = fc)) +
+  g <- ggplot2::ggplot(df_main, ggplot2::aes(x = .data$abs, y = .data$fc)) +
     ggplot2::geom_line(linewidth = 0.9, colour = "black") +
     ggplot2::geom_line(
       data = df_ref,
-      ggplot2::aes(x = abs, y = dr, colour = method, linetype = method),
+      ggplot2::aes(x = .data$abs, y = .data$dr, colour = .data$method, linetype = .data$method),
       linewidth = 0.8,
       alpha = 0.9
     ) +
     ggplot2::scale_colour_manual(values = pal, drop = FALSE) +
     ggplot2::coord_cartesian(ylim = c(0, 1.05)) +
     ggplot2::labs(
-      title = "Calibration plot (cp4p-style): ECDF of (1-p) with π0 reference curves",
+      title = "Calibration plot (cp4p-style): ECDF of (1-p) with pi0 reference curves",
       subtitle = paste0("Subset: ", sel, " | n=", length(p)),
       x = "1 - p.value",
       y = "Cumulative Distribution Function of 1 - p.value",
-      colour = "π0 method",
-      linetype = "π0 method"
+      colour = "pi0 method",
+      linetype = "pi0 method"
     ) +
     ggplot2::theme_minimal()
 
   if (isTRUE(return_data)) {
     return(list(plot = g, pi0 = stats::setNames(pi0_vec, methods), data = list(main = df_main, ref = df_ref)))
   }
+
   g
 }
