@@ -10,11 +10,7 @@
   
 ## 1. Description
 
-In mass spectrometry-based proteomics, false discovery rate (FDR) control underpins the credibility of peptide and protein identifications. We propose pipeline-agnostic diagnostics
-that audit internal coherence of identification scores, q-values, and posterior error probabilities, quantify tail support and cutoff fragility, and test plausibility of target–decoy assumptions. 
-
-This package provides R functions to compute verifiable false discovery rate (FDR) diagnostic checks for workflows based on target-decoy competition and related confidence measures.
-It implements calibration, stability and tail diagnostics, including tail support, threshold elasticity, posterior error probability (PEP) reliability, and equal-chance checks.
+False discovery rate (FDR) control is central to the credibility of peptide and protein identifications in mass spectrometry–based proteomics. **diagFDR** provides pipeline-agnostic diagnostics for target–decoy workflows that assess calibration and stability of reported confidence measures. It checks the coherence of scores, q-values, and posterior error probabilities (PEPs), quantifies decoy support near operating thresholds, measures cutoff sensitivity, and evaluates the equal-chance assumption using q-value band diagnostics.
 
 ## 2. Installation
 
