@@ -108,6 +108,7 @@ x_minrun <- diann_global_minrunq(
   q_source = "min_run(Q.Value)"
 )
 ```
+and next by computing the diagnostic measures with `dfdr_run_all` as shown before.
 
 ### 3.2 MaxQuant
 
