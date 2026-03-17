@@ -40,7 +40,8 @@ To enable all diagnostics at the precursor level, perform the search in DIA-NN u
 - a permissive export ceiling: `--qvalue 0.5` (or higher if possible)
 
 The q-value ceiling matters because some diagnostics operate in low-confidence regions
-(e.g. equal-chance plausibility checks, or local-window support around cutoffs).
+(e.g. equal-chance plausibility checks, or local-window support around cutoffs). 
+The DIA-NN search has to provide you a `.parquet ` file containing the columns `Precursor.Id`, `Decoy`, `Q.Value` (optional: `Run`, `Global.Q.Value`, `PEP`).
 
 First, you have to upload the  `.parquet ` file in your R session:
 ```
