@@ -102,7 +102,6 @@ Alternatively, the paper associated to the package proposes a common scope misus
 x_minrun <- diann_global_minrunq(
   rep,
   q_col = "Q.Value",
-  score_col = "CScore",
   q_max_export = 0.5,
   unit = "precursor",
   scope = "aggregated",
