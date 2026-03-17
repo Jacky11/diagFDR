@@ -1,6 +1,8 @@
 <h1 align="center">diagFDR: Verifiable FDR Diagnostics for Proteomics</h1>
 
-
+<p align="center" style="max-width: 100%; max-height: 100%;">
+  <img src="diagFDR_hex.png" width="250" height="300">
+</p>
 
 <div align="center" style="margin-top: 10px;">
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="GPL v3 License"></a>
