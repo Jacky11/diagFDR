@@ -96,6 +96,20 @@ Finally, a single HTML report can be obtained using:
 dfdr_render_report(diag, out_dir = "path/to/diagFDR_diann_out")
 ```
 
+Alternatively, the paper associated to the package proposes a common scope misuse (min-run aggregation). This can be performed by defining the universe with:
+```
+# Scope misuse comparator: min run-wise q over runs per precursor (anti-pattern)
+x_minrun <- diann_global_minrunq(
+  rep,
+  q_col = "Q.Value",
+  score_col = "CScore",
+  q_max_export = 0.5,
+  unit = "precursor",
+  scope = "aggregated",
+  q_source = "min_run(Q.Value)"
+)
+```
+
 ### 3.2 MaxQuant
 
 To enable all diagnostics at the precursor level, the `msms.txt` file resulting from the search has to be used.
