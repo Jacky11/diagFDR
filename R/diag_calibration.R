@@ -85,40 +85,72 @@ dfdr_sumpep <- function(x, alphas) {
 #'
 #' @return A list with elements \code{bands} (tibble) and \code{pooled} (tibble).
 #' @export
-dfdr_equal_chance_qbands <- function(x,
-                                     breaks = c(0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
-                                     low_conf = c(0.2, 0.5),
-                                     min_N = 2000) {
+dfdr_equal_chance_qbands <- function(
+    x,
+    breaks = c(0, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5),
+    low_conf = c(0.2, 0.5),
+    min_N = 2000
+) {
   validate_dfdr_tbl(x)
-
   meta <- attr(x, "meta") %||% list()
   qmax <- meta$q_max_export %||% NA_real_
   if (!is.finite(qmax)) qmax <- max(x$q, na.rm = TRUE)
 
   breaks_use <- breaks[breaks <= qmax + 1e-12]
   breaks_use <- unique(sort(breaks_use))
-  if (length(breaks_use) < 2) rlang::abort("Not enough q-band breaks after truncation.")
+
+  # --- NEW: graceful handling when not applicable ---
+  if (length(breaks_use) < 2) {
+    bands <- tibble::tibble(
+      qbin = factor(),
+      n = integer(),
+      n_decoy = integer(),
+      decoy_frac = numeric(),
+      q_mean = numeric()
+    )
+    pooled <- tibble::tibble(
+      qmax_export = qmax,
+      low_lo = low_conf[1],
+      low_hi = low_conf[2],
+      N_test = 0,
+      N_D_test = 0,
+      pi_D_hat = NA_real_,
+      effect_abs = NA_real_,
+      ci95_lo = NA_real_,
+      ci95_hi = NA_real_,
+      p_value_binom = NA_real_,
+      pass_minN = FALSE,
+      note = "Not applicable: qmax below smallest nonzero break; provide smaller breaks or export higher q."
+    )
+    return(list(
+      bands = bands,
+      pooled = pooled,
+      params = list(breaks = breaks, low_conf = low_conf, min_N = min_N)
+    ))
+  }
+  # --- end NEW ---
+
   if (max(breaks_use) < qmax) breaks_use <- c(breaks_use, qmax)
 
-  dd <- x |>
-    dplyr::filter(is.finite(.data$q), .data$q >= 0, .data$q <= qmax) |>
-    dplyr::mutate(qbin = cut(.data$q, breaks = breaks_use, include.lowest = TRUE, right = TRUE))
+  dd <- dplyr::mutate(
+    dplyr::filter(x, is.finite(.data$q), .data$q >= 0, .data$q <= qmax),
+    qbin = cut(.data$q, breaks = breaks_use, include.lowest = TRUE, right = TRUE)
+  )
 
-  bands <- dd |>
-    dplyr::group_by(.data$qbin) |>
+  bands <- dplyr::arrange(
     dplyr::summarise(
+      dplyr::group_by(dd, .data$qbin),
       n = dplyr::n(),
       n_decoy = sum(.data$is_decoy),
       decoy_frac = .data$n_decoy / .data$n,
       q_mean = mean(.data$q),
       .groups = "drop"
-    ) |>
-    dplyr::arrange(.data$q_mean)
+    ),
+    .data$q_mean
+  )
 
   lo <- low_conf[1]; hi <- low_conf[2]
-  test_tbl <- bands |>
-    dplyr::filter(is.finite(.data$q_mean), .data$q_mean >= lo, .data$q_mean <= hi)
-
+  test_tbl <- dplyr::filter(bands, is.finite(.data$q_mean), .data$q_mean >= lo, .data$q_mean <= hi)
   N_test <- sum(test_tbl$n)
   N_D_test <- sum(test_tbl$n_decoy)
   pi_hat <- ifelse(N_test > 0, N_D_test / N_test, NA_real_)
@@ -126,26 +158,17 @@ dfdr_equal_chance_qbands <- function(x,
   p_binom <- if (N_test > 0) stats::binom.test(N_D_test, N_test, p = 0.5)$p.value else NA_real_
 
   pooled <- tibble::tibble(
-    qmax_export = qmax,
-    low_lo = lo, low_hi = hi,
-    N_test = N_test,
-    N_D_test = N_D_test,
+    qmax_export = qmax, low_lo = lo, low_hi = hi,
+    N_test = N_test, N_D_test = N_D_test,
     pi_D_hat = pi_hat,
     effect_abs = ifelse(is.finite(pi_hat), abs(pi_hat - 0.5), NA_real_),
-    ci95_lo = ci[1],
-    ci95_hi = ci[2],
+    ci95_lo = ci[1], ci95_hi = ci[2],
     p_value_binom = p_binom,
     pass_minN = N_test >= min_N
   )
 
-  list(
-    bands = bands,
-    pooled = pooled,
-    params = list(breaks = breaks, low_conf = low_conf, min_N = min_N)
-  )
+  list(bands = bands, pooled = pooled, params = list(breaks = breaks, low_conf = low_conf, min_N = min_N))
 }
-
-
 
 #' Decoy PEP sanity checks
 #'
