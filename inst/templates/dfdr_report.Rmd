@@ -167,7 +167,7 @@ summary:hover {
 
 ## Overview
 
-This report was generated from the output of `dfdr_run_all()`.
+This report was generated from the output of the `dfdr_run_all()` function of the `diagFDR` R package.
 
 - **diagFDR version:** `r as.character(utils::packageVersion("diagFDR"))`
 - **Created:** `r as.character(Sys.time())`
@@ -379,9 +379,9 @@ if (length(score_plots) == 0) {
 <div class="alert-info">
 **What to look for:**
 
-- **D_alpha curve**: Should remain >50 at operating thresholds. U-shape indicates granularity at extreme cutoffs.
-- **CV curve**: Should be <0.15 at headline threshold. High CV = unstable estimate.
-- **D_alpha_win**: Local decoy support near cutoff. <20 indicates sparse boundary support.
+- **D_alpha curve**: Should remain high at operating thresholds (e.g., >50). U-shape indicates granularity at extreme cutoffs.
+- **CV curve**: Should be low (e.g., <0.15) at headline threshold. High CV = unstable estimate.
+- **D_alpha_win**: Local decoy support near cutoff. If it is low (e.g., <20) indicates sparse boundary support.
 - **Elasticity**: High Jaccard index (>0.9) indicates stability.
 </div>
 
@@ -515,6 +515,16 @@ if (length(pep_tdc_plots) == 0) {
 
 <div class="alert-info">
 This section is shown only when a \texttt{p} column is available (true p-values or pseudo-p-values derived from scores).
+
+**What to look for:**
+
+- **p-value density**: Density of p-values associated to decoy should be uniform between 0 and 1. The density associated to targets should be peaky near 0 and decrease between 0 and 1.
+- **Calibration plots**: Straight lines have slopes equal to different estimators of "pi0", i.e. the proportion of true null hypotheses (proportion of false identifications). 
+For decoys, the slope should be close to 1 (100% of false identifications). For targets, the closer the estimators are to 0, the lower the proportion of false identifications among the targets.
+- **Estimated FDR**: This is a proxy of the FDR based on an estimator of "pi0". It should be 100% for decoys. It should increase with the p-value threshold for targets until the value of the "pi0" estimator when the threshold is 1. 
+- **pi0 Storey**: Storey's estimator of the proportion of true null hypotheses (incorrect identifications). Should be stable across lambda (flat line).
+- **BH elasticity**: High Jaccard (>0.95) indicates stable BH lists. Low Jaccard at operating thresholds suggests sensitivity to cutoff choice.
+
 </div>
 
 ### (Pseudo-)p-value density (targets vs decoys)
