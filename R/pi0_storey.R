@@ -1,15 +1,45 @@
-#' Storey pi0(lambda) tail-uniformity diagnostic
+#' Storey \eqn{\pi_0(\lambda)} tail-uniformity diagnostic
 #'
-#' Estimates pi0(lambda) = Card(p > lambda) / ((1-lambda)*m) across a grid of lambdas.
-#' Intended as a plausibility diagnostic for (pseudo-)p-values.
+#' Estimates \eqn{\pi_0(\lambda) = \#\{p>\lambda\} / ((1-\lambda)m)} over a grid
+#' of \code{lambdas}. This is a plausibility diagnostic for (pseudo-)p-values:
+#' under a well-calibrated null, the upper tail should be approximately uniform,
+#' leading to stable \eqn{\pi_0(\lambda)} curves.
 #'
-#' @param x A dfdr_tbl (or data.frame) containing column \code{p}.
-#' @param lambdas Numeric vector in [0,1). Typical range: 0.5--0.95.
-#' @param stratify Optional character vector of column names for stratification.
-#' @param min_n Minimum number of finite p-values required per stratum.
-#' @param clamp Logical; if TRUE clamp pi0 into `[0,1]` for reporting (default TRUE).
+#' @param x A \code{dfdr_tbl} (or data.frame) containing column \code{p}.
+#' @param lambdas Numeric vector in \eqn{[0,1)}. Typical range: 0.5--0.95.
+#' @param stratify Optional character vector of column names used to stratify the
+#'   diagnostic (e.g. \code{c("run")}).
+#' @param min_n Integer. Minimum number of finite p-values required per stratum.
+#' @param clamp Logical. If \code{TRUE} (default), clamp \code{pi0_hat} into
+#'   \code{[0,1]} for reporting.
 #'
-#' @return A list with elements \code{pi0} (tibble) and \code{summary} (tibble).
+#' @return
+#' A list with components:
+#' \describe{
+#'   \item{pi0}{A \link[tibble:tibble]{tibble} with one row per \code{lambda} per
+#'   stratum and columns \code{stratum}, \code{lambda}, \code{pi0_hat}, and \code{n}
+#'   (the number of finite p-values in the stratum).}
+#'   \item{summary}{A tibble with one row per stratum, including \code{n} and
+#'   summary statistics of \code{pi0_hat} across \code{lambdas}
+#'   (\code{median_pi0}, \code{sd_pi0}, \code{iqr_pi0}). Strata with \code{n < min_n}
+#'   are reported with \code{NA} metrics and a \code{note}.}
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 6000
+#' df <- tibble(
+#'   run = sample(c("run1", "run2"), n, replace = TRUE),
+#'   # mostly uniform p-values + a small enriched component
+#'   p = c(stats::runif(5400), stats::rbeta(600, 0.3, 1))
+#' )
+#'
+#' out <- dfdr_pi0_storey(df, stratify = "run", lambdas = seq(0.5, 0.9, by = 0.1), min_n = 500)
+#' head(out$pi0)
+#' out$summary
+#'
 #' @export
 dfdr_pi0_storey <- function(x,
                             lambdas = seq(0.5, 0.95, by = 0.05),
@@ -81,11 +111,33 @@ dfdr_pi0_storey <- function(x,
   list(pi0 = pi0_all, summary = sum_all)
 }
 
-#' Plot Storey pi0(lambda) curve
+#' Plot Storey \eqn{\pi_0(\lambda)} curve
 #'
-#' @param pi0_tbl Output \code{$pi0} from \code{\link{dfdr_pi0_storey}}.
-#' @param title Plot title.
-#' @return A ggplot object.
+#' Plots \eqn{\pi_0(\lambda)} estimates returned by \code{\link{dfdr_pi0_storey}}.
+#' Values closer to 1 suggest many nulls (few true effects), while values far below
+#' 1 (especially if unstable across \code{lambda}) may indicate deviations from
+#' tail-uniformity.
+#'
+#' @param pi0_tbl A tibble, typically \code{out$pi0} from \code{\link{dfdr_pi0_storey}}.
+#'   Must contain columns \code{stratum}, \code{lambda}, and \code{pi0_hat}.
+#' @param title Character. Plot title.
+#'
+#' @return
+#' A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' df <- tibble(
+#'   stratum = rep("all", 5),
+#'   lambda = seq(0.5, 0.9, by = 0.1),
+#'   pi0_hat = c(0.95, 0.96, 0.97, 0.98, 0.99),
+#'   n = 1000
+#' )
+#' p <- dfdr_plot_pi0(df)
+#' p
+#'
 #' @export
 dfdr_plot_pi0 <- function(pi0_tbl, title = "Storey pi0(lambda) diagnostic") {
   .check_has_cols(pi0_tbl, c("stratum", "lambda", "pi0_hat"))

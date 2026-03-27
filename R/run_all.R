@@ -1,41 +1,92 @@
 #' Run a standard set of FDR QC diagnostics
 #'
-#' Runs stability, calibration, and (optionally) PEP- and p-value-based diagnostics
-#' on a named list of \code{dfdr_tbl} objects and returns tables and plots.
+#' Runs stability, boundary-support, and plausibility diagnostics on a named list
+#' of \code{dfdr_tbl} objects and returns both summary tables and plots.
+#'
+#' Diagnostics include (depending on available columns):
+#' \itemize{
+#'   \item Target/decoy headline diagnostics at \code{alpha_main} (counts, FDR estimate, stability proxies)
+#'   \item Stability curves across \code{alphas}
+#'   \item Local tail decoy support near each \code{alpha}
+#'   \item Elasticity (Jaccard overlap under threshold perturbation)
+#'   \item PEP reliability / IPE and PEP sanity summaries (if \code{pep} is present)
+#'   \item Equal-chance by q-bands (always attempted; may be not applicable if q-range is truncated)
+#'   \item (Pseudo-)p-value calibration and Storey \eqn{\pi_0(\lambda)} (if \code{p} is present or computed)
+#'   \item BH diagnostics (if \code{p} is present)
+#' }
 #'
 #' @param xs Named list of \code{dfdr_tbl} objects.
-#' @param alpha_main Headline threshold (e.g. 0.01).
-#' @param alphas Numeric vector of thresholds used to build curves.
-#' @param eps Relative perturbation used in elasticity (e.g. 0.2).
-#' @param win_rel Relative window width for local tail support (e.g. 0.2).
-#' @param truncation Truncation policy for local tail windows; see \code{\link{dfdr_local_tail}}.
-#' @param k_fixed Fixed +/-K used in sensitivity intervals.
-#' @param k_sqrt_mult Multiplier for adaptive +/-ceil(mult*sqrt(D)) intervals.
-#' @param qband_breaks Cutpoints for q-band equal-chance diagnostic.
-#' @param low_conf Pooled low-confidence region for equal-chance test.
-#' @param min_N_equalchance Minimum pooled N for equal-chance test.
-#' @param pep_binwidth Bin width for PEP reliability bins.
-#' @param pep_n_min Minimum bin size to include PEP bins in IPE summary/plots.
-#' @param pep_max Max mean PEP included in IPE summary.
-#'
-#' @param pep_sanity_thresholds Thresholds for decoy PEP sanity summaries.
-#' @param pep_density_max Max PEP displayed in target/decoy density plot.
-#' @param pep_rel_tdc_breaks Breaks used for the TDC-style PEP reliability bins.
-#' @param pep_rel_tdc_add_decoy Additive correction used in D/T for TDC-style reliability.
-#'
-#' @param compute_pseudo_pvalues If TRUE, attempt to compute pseudo-p-values from score where p is missing.
-#' @param pseudo_pvalue_method Method passed to \code{\link{score_to_pvalue}} (default "decoy_ecdf").
-#' @param p_u_grid Grid for p-value ECDF calibration diagnostics.
-#' @param p_u_max Upper bound of u used for p-value inflation summaries.
+#' @param alpha_main Numeric scalar in \eqn{(0,1]}. Headline threshold (e.g. 0.01).
+#' @param alphas Numeric vector of thresholds in \eqn{(0,1]} used to build curves.
+#' @param eps Numeric scalar. Relative perturbation used in elasticity (e.g. 0.2).
+#' @param win_rel Numeric scalar. Relative window width for local tail support (e.g. 0.2).
+#' @param truncation Character. Truncation policy for local tail windows; see \code{\link{dfdr_local_tail}}.
+#' @param k_fixed Integer. Fixed +/-K used in sensitivity intervals.
+#' @param k_sqrt_mult Numeric. Multiplier for adaptive +/-\eqn{\lceil mult\sqrt{D}\rceil} intervals.
+#' @param qband_breaks Numeric vector. Cutpoints for q-band equal-chance diagnostic.
+#' @param low_conf Length-2 numeric vector. Pooled low-confidence region for the equal-chance test.
+#' @param min_N_equalchance Integer. Minimum pooled N for equal-chance test.
+#' @param pep_binwidth Numeric. Bin width for PEP reliability bins.
+#' @param pep_n_min Integer. Minimum bin size to include PEP bins in IPE summary/plots.
+#' @param pep_max Numeric. Max mean PEP included in IPE summary.
+#' @param pep_sanity_thresholds Numeric vector. Thresholds for decoy PEP sanity summaries.
+#' @param pep_density_max Numeric. Max PEP displayed in target/decoy density plot.
+#' @param pep_rel_tdc_breaks Numeric vector. Breaks used for the TDC-style PEP reliability bins.
+#' @param pep_rel_tdc_add_decoy Integer. Additive correction used in D/T for TDC-style reliability.
+#' @param compute_pseudo_pvalues Logical. If \code{TRUE}, attempt to compute pseudo-p-values
+#'   when \code{p} is missing.
+#' @param pseudo_pvalue_method Character. Method passed to \code{\link{score_to_pvalue}}
+#'   (default \code{"decoy_ecdf"}).
+#' @param p_u_grid Numeric vector in \eqn{(0,1]}. Grid for p-value ECDF calibration diagnostics.
+#' @param p_u_max Numeric scalar in \eqn{(0,1]}. Upper bound of \code{u} used for p-value inflation summaries.
 #' @param p_stratify Optional character vector of columns for stratified p-value diagnostics.
-#' @param p_min_n_calib Minimum n for p-value calibration per stratum.
-#' @param p_lambdas Lambdas for Storey pi0(lambda) diagnostic.
-#' @param p_min_n_pi0 Minimum n for pi0 diagnostic per stratum.
-#' @param bh_boundary Boundary window type for BH diagnostics ("mult" or "add").
-#' @param bh_win Relative window size for BH boundary support when bh_boundary="mult".
-#' @param bh_delta Additive window size when bh_boundary="add".
+#' @param p_min_n_calib Integer. Minimum n for p-value calibration per stratum.
+#' @param p_lambdas Numeric vector in \eqn{[0,1)}. Lambdas for Storey \eqn{\pi_0(\lambda)} diagnostic.
+#' @param p_min_n_pi0 Integer. Minimum n for \eqn{\pi_0(\lambda)} diagnostic per stratum.
+#' @param bh_boundary Character. Boundary window type for BH diagnostics (\code{"mult"} or \code{"add"}).
+#' @param bh_win Numeric. Relative window size for BH boundary support when \code{bh_boundary="mult"}.
+#' @param bh_delta Numeric. Additive window size when \code{bh_boundary="add"}.
 #'
-#' @return A list with elements \code{tables}, \code{plots}, \code{objects}, and \code{params}.
+#' @return
+#' A list with components:
+#' \describe{
+#'   \item{tables}{A named list of result tables (tibbles) for the computed diagnostics
+#'   (e.g. \code{headline}, \code{stability}, \code{local_tail}, \code{elasticity},
+#'   and optional PEP/p-value/BH-related tables).}
+#'   \item{plots}{A named list of \link[ggplot2:ggplot]{ggplot} objects produced from
+#'   the diagnostics.}
+#'   \item{objects}{The input \code{xs}, possibly augmented with computed pseudo-p-values
+#'   if \code{compute_pseudo_pvalues=TRUE}.}
+#'   \item{params}{A list of parameter values used to compute the diagnostics.}
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 5000
+#' df <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   run = sample(c("run1", "run2"), n, replace = TRUE),
+#'   is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+#'   score = rnorm(n),
+#'   # Toy q/pep/p for demonstration purposes
+#'   q = pmin(1, rank(-score) / n),
+#'   pep = stats::runif(n),
+#'   p = stats::runif(n)
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy", p_source = "toy")
+#'
+#' diag <- dfdr_run_all(
+#'   xs = list(toy = x),
+#'   alpha_main = 0.01,
+#'   compute_pseudo_pvalues = FALSE
+#' )
+#'
+#' names(diag$tables)
+#' names(diag$plots)
+#' diag$tables$headline
+#'
 #' @export
 dfdr_run_all <- function(xs,
                          alpha_main = 0.01,

@@ -1,11 +1,26 @@
-#' Plot decoy support D_alpha versus alpha
+#' Plot decoy support \eqn{D_\alpha} versus \code{alpha}
 #'
-#' @param stab_tbl A stability table (e.g. from [dfdr_curve_stability()]) containing
-#'   columns `alpha`, `D_alpha`, and `list`.
-#' @param xlab X-axis label.
-#' @param title Plot title.
+#' Plots the number of accepted decoys at each threshold \code{alpha}. This is a
+#' key stability indicator: very small \eqn{D_\alpha} implies granular/unstable
+#' behaviour of target-decoy based estimates.
 #'
-#' @return A ggplot object.
+#' @param stab_tbl A stability table (e.g. from \code{\link{dfdr_curve_stability}})
+#'   containing columns \code{alpha}, \code{D_alpha}, and \code{list}.
+#' @param xlab Character. X-axis label.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' stab_tbl <- tibble(
+#'   list = rep(c("A", "B"), each = 4),
+#'   alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+#'   D_alpha = c(5, 8, 20, 40, 2, 3, 6, 10)
+#' )
+#' dfdr_plot_dalpha(stab_tbl)
+#'
 #' @export
 dfdr_plot_dalpha <- function(stab_tbl, xlab = "alpha (log10)", title = "Decoy support D_alpha vs alpha") {
   ggplot2::ggplot(stab_tbl, ggplot2::aes(x = alpha, y = D_alpha, color = .data$list)) +
@@ -15,14 +30,28 @@ dfdr_plot_dalpha <- function(stab_tbl, xlab = "alpha (log10)", title = "Decoy su
     ggplot2::labs(title = title, x = xlab, y = "D_alpha", color = "")
 }
 
-#' Plot CV_hat versus alpha
+#' Plot \code{CV_hat} versus \code{alpha}
 #'
-#' @param stab_tbl A stability table (e.g. from \code{\link{dfdr_curve_stability}}) with
-#'   columns \code{alpha}, \code{CV_hat}, and \code{list}.
-#' @param xlab X-axis label.
-#' @param title Plot title.
+#' Plots a stability proxy (\code{CV_hat}) against the threshold \code{alpha} for
+#' one or more lists.
 #'
-#' @return A ggplot object.
+#' @param stab_tbl A stability table (e.g. from \code{\link{dfdr_curve_stability}})
+#'   with columns \code{alpha}, \code{CV_hat}, and \code{list}.
+#' @param xlab Character. X-axis label.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' stab_tbl <- tibble(
+#'   list = rep(c("A", "B"), each = 4),
+#'   alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+#'   CV_hat = c(0.30, 0.22, 0.15, 0.12, 0.40, 0.28, 0.20, 0.18)
+#' )
+#' dfdr_plot_cv(stab_tbl)
+#'
 #' @export
 dfdr_plot_cv <- function(stab_tbl, xlab = "alpha (log10)", title = "Stability proxy CV_hat vs alpha") {
   ggplot2::ggplot(stab_tbl, ggplot2::aes(x = alpha, y = CV_hat, color = .data$list)) +
@@ -32,14 +61,29 @@ dfdr_plot_cv <- function(stab_tbl, xlab = "alpha (log10)", title = "Stability pr
     ggplot2::labs(title = title, x = xlab, y = "CV_hat", color = "")
 }
 
-#' Plot local decoy support D_alpha_win versus alpha
+#' Plot local decoy support \code{D_alpha_win} versus \code{alpha}
 #'
-#' @param dwin_tbl A local-tail table (e.g. from [dfdr_local_tail()]) containing
-#'   columns `alpha`, `D_alpha_win`, and `list`.
-#' @param xlab X-axis label.
-#' @param title Plot title.
+#' Plots the number of decoys in a right-neighborhood above each threshold
+#' (as computed by \code{\link{dfdr_local_tail}}). This approximates how well
+#' supported the boundary is by nearby decoys.
 #'
-#' @return A ggplot object.
+#' @param dwin_tbl A local-tail table (e.g. from \code{\link{dfdr_local_tail}})
+#'   containing columns \code{alpha}, \code{D_alpha_win}, and \code{list}.
+#' @param xlab Character. X-axis label.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' dwin_tbl <- tibble(
+#'   list = rep(c("A", "B"), each = 4),
+#'   alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+#'   D_alpha_win = c(1, 2, 6, 15, 0, 1, 2, 4)
+#' )
+#' dfdr_plot_dwin(dwin_tbl)
+#'
 #' @export
 dfdr_plot_dwin <- function(dwin_tbl, xlab = "alpha (log10)", title = "Local decoy support D_alpha_win vs alpha") {
   ggplot2::ggplot(dwin_tbl, ggplot2::aes(x = alpha, y = D_alpha_win, color = .data$list)) +
@@ -49,14 +93,29 @@ dfdr_plot_dwin <- function(dwin_tbl, xlab = "alpha (log10)", title = "Local deco
     ggplot2::labs(title = title, x = xlab, y = "D_alpha_win", color = "")
 }
 
-#' Plot threshold elasticity (Jaccard) versus alpha
+#' Plot threshold elasticity (Jaccard) versus \code{alpha}
 #'
-#' @param el_tbl An elasticity table (e.g. from [dfdr_elasticity()]) containing
-#'   columns `alpha`, `jaccard`, and `list`.
-#' @param xlab X-axis label.
-#' @param title Plot title.
+#' Plots Jaccard overlap values (as returned by \code{\link{dfdr_elasticity}})
+#' against \code{alpha}. Lower overlap indicates greater sensitivity of the
+#' accepted set to small changes of the threshold.
 #'
-#' @return A ggplot object.
+#' @param el_tbl An elasticity table (e.g. from \code{\link{dfdr_elasticity}})
+#'   containing columns \code{alpha}, \code{jaccard}, and \code{list}.
+#' @param xlab Character. X-axis label.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' el_tbl <- tibble(
+#'   list = rep(c("A", "B"), each = 4),
+#'   alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+#'   jaccard = c(0.95, 0.93, 0.90, 0.88, 0.92, 0.90, 0.86, 0.82)
+#' )
+#' dfdr_plot_elasticity(el_tbl)
+#'
 #' @export
 dfdr_plot_elasticity <- function(el_tbl, xlab = "alpha (log10)", title = "Threshold elasticity (Jaccard) vs alpha") {
   ggplot2::ggplot(el_tbl, ggplot2::aes(x = alpha, y = jaccard, color = .data$list)) +
@@ -68,11 +127,27 @@ dfdr_plot_elasticity <- function(el_tbl, xlab = "alpha (log10)", title = "Thresh
 
 #' Plot PEP reliability
 #'
-#' @param bins_tbl A PEP reliability bins table (e.g. the `$bins` output of
-#'   [dfdr_pep_reliability()]) containing columns `pep_mean`, `decoy_rate`, and `n`.
-#' @param title Plot title.
+#' Visualises PEP reliability by plotting the observed decoy fraction against the
+#' mean predicted PEP in each bin (from \code{\link{dfdr_pep_reliability}}). Point
+#' size reflects bin counts.
 #'
-#' @return A ggplot object.
+#' @param bins_tbl A PEP reliability bins table (e.g. \code{out$bins} from
+#'   \code{\link{dfdr_pep_reliability}}) containing columns \code{pep_mean},
+#'   \code{decoy_rate}, and \code{n}.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' bins_tbl <- tibble(
+#'   pep_mean = c(0.05, 0.15, 0.25, 0.35),
+#'   decoy_rate = c(0.06, 0.14, 0.30, 0.40),
+#'   n = c(500, 400, 250, 120)
+#' )
+#' dfdr_plot_pep_reliability(bins_tbl)
+#'
 #' @export
 dfdr_plot_pep_reliability <- function(bins_tbl, title = "PEP reliability") {
   ggplot2::ggplot(bins_tbl, ggplot2::aes(x = pep_mean, y = decoy_rate, size = n)) +
@@ -85,11 +160,27 @@ dfdr_plot_pep_reliability <- function(bins_tbl, title = "PEP reliability") {
 
 #' Plot equal-chance plausibility by q-value bands
 #'
-#' @param bands_tbl A q-band table (e.g. the `$bands` output of
-#'   [dfdr_equal_chance_qbands()]) containing columns `q_mean`, `decoy_frac`, and `n`.
-#' @param title Plot title.
+#' Visualises decoy fractions by q-value band (as produced by
+#' \code{\link{dfdr_equal_chance_qbands}}). A horizontal reference at 0.5 indicates
+#' the expected decoy fraction under an "equal-chance" region assumption.
 #'
-#' @return A ggplot object.
+#' @param bands_tbl A q-band table (e.g. \code{out$bands} from
+#'   \code{\link{dfdr_equal_chance_qbands}}) containing columns \code{q_mean},
+#'   \code{decoy_frac}, and \code{n}.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' bands_tbl <- tibble(
+#'   q_mean = c(0.05, 0.15, 0.30, 0.45),
+#'   decoy_frac = c(0.10, 0.20, 0.45, 0.52),
+#'   n = c(2000, 1500, 800, 400)
+#' )
+#' dfdr_plot_equal_chance(bands_tbl)
+#'
 #' @export
 dfdr_plot_equal_chance <- function(bands_tbl, title = "Equal-chance plausibility: decoy fraction by q-band") {
   ggplot2::ggplot(bands_tbl, ggplot2::aes(x = q_mean, y = decoy_frac, size = n)) +
@@ -103,9 +194,31 @@ dfdr_plot_equal_chance <- function(bands_tbl, title = "Equal-chance plausibility
 
 #' Plot target vs decoy score distributions
 #'
-#' @param x A dfdr_tbl object
-#' @param title Plot title
-#' @return A ggplot object with target distribution in blue and decoy distribution in red
+#' Plots density distributions of scores (if available) or q-values (fallback) for
+#' targets vs decoys. This provides a quick sanity check that decoys are shifted
+#' toward lower scores (or higher q-values).
+#'
+#' @param x A \code{dfdr_tbl}.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 4000
+#' df <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   run = "run1",
+#'   is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+#'   score = rnorm(n),
+#'   q = pmin(1, rank(-score) / n),
+#'   pep = NA_real_
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+#' dfdr_plot_score_distributions(x)
+#'
 #' @export
 dfdr_plot_score_distributions <- function(x, title = "Target vs Decoy Score Distributions") {
   validate_dfdr_tbl(x)
@@ -165,11 +278,38 @@ dfdr_plot_score_distributions <- function(x, title = "Target vs Decoy Score Dist
   p
 }
 
-#' Plot scope disagreement as Jaccard overlap heatmap
+#' Plot scope disagreement as a Jaccard overlap heatmap
 #'
-#' @param xs Named list of dfdr_tbl objects
-#' @param alpha Threshold for accepted targets
-#' @return A ggplot heatmap
+#' Computes accepted target ID sets for each list at a fixed \code{alpha} and
+#' visualises pairwise Jaccard overlaps as a heatmap. IDs are compared at the
+#' "base" level by stripping any \code{"run||"} prefix.
+#'
+#' @param xs Named list of \code{dfdr_tbl} objects.
+#' @param alpha Numeric threshold used to define accepted targets (\code{q <= alpha}).
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object (heatmap).
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 2000
+#'
+#' make_x <- function(label) {
+#'   df <- tibble(
+#'     id = paste0("run1||", as.character(seq_len(n))),
+#'     run = "run1",
+#'     is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+#'     score = rnorm(n),
+#'     q = stats::runif(n, 0, 0.05),
+#'     pep = NA_real_
+#'   )
+#'   as_dfdr_tbl(df, unit = "psm", scope = label, q_source = "toy")
+#' }
+#'
+#' xs <- list(A = make_x("A"), B = make_x("B"), C = make_x("C"))
+#' dfdr_plot_scope_disagreement_matrix(xs, alpha = 0.01)
+#'
 #' @export
 dfdr_plot_scope_disagreement_matrix <- function(xs, alpha = 0.01) {
   extract_base_id <- function(ids) {
@@ -235,12 +375,33 @@ dfdr_plot_scope_disagreement_matrix <- function(xs, alpha = 0.01) {
 
 #' Plot PEP density by decoy/target
 #'
-#' @param x A dfdr_tbl with pep.
-#' @param pep_max Max PEP displayed (default 0.5).
-#' @param bw Bandwidth passed to stats::density() via geom_density (optional).
-#' @param adjust Smoothing adjustment passed to geom_density (default 1).
-#' @param title Plot title.
-#' @return ggplot
+#' Plots density curves of PEP values for targets vs decoys, truncated to
+#' \code{pep <= pep_max}.
+#'
+#' @param x A \code{dfdr_tbl} with a \code{pep} column.
+#' @param pep_max Numeric. Maximum PEP displayed (default 0.5).
+#' @param bw Bandwidth passed to \code{ggplot2::geom_density()}.
+#' @param adjust Numeric smoothing adjustment passed to \code{geom_density()}.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 4000
+#' df <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   run = "run1",
+#'   is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+#'   score = rnorm(n),
+#'   q = stats::runif(n, 0, 0.05),
+#'   pep = stats::runif(n)
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+#' dfdr_plot_pep_density_by_decoy(x, pep_max = 0.5)
+#'
 #' @export
 dfdr_plot_pep_density_by_decoy <- function(x, pep_max = 0.5,
                                            bw = "nrd0",
@@ -268,9 +429,29 @@ dfdr_plot_pep_density_by_decoy <- function(x, pep_max = 0.5,
 
 #' Plot target-focused PEP reliability (TDC-style)
 #'
-#' @param rel_tbl Output of dfdr_pep_reliability_tdc()
-#' @param title Title of the plot
-#' @return ggplot
+#' Visualises the output of \code{\link{dfdr_pep_reliability_tdc}} by plotting the
+#' estimated target error proxy \code{err_hat_target} against the mean predicted
+#' target PEP per bin. Point size reflects the number of targets per bin.
+#'
+#' @param rel_tbl Output of \code{\link{dfdr_pep_reliability_tdc}}.
+#' @param title Character. Plot title.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' rel_tbl <- tibble(
+#'   bin = c("(0,0.1]", "(0.1,0.2]", "(0.2,0.3]"),
+#'   n_target = c(800, 500, 200),
+#'   n_decoy = c(20, 30, 40),
+#'   pep_mean_targets = c(0.05, 0.15, 0.25),
+#'   pep_mean_all = c(0.06, 0.17, 0.28),
+#'   err_hat_target = c(0.03, 0.06, 0.20),
+#'   pep_bin_mid = c(0.05, 0.15, 0.25)
+#' )
+#' dfdr_plot_pep_reliability_tdc(rel_tbl)
+#'
 #' @export
 dfdr_plot_pep_reliability_tdc <- function(rel_tbl,
                                           title = "PEP reliability (targets; TDC-style D/T error proxy)") {
@@ -294,14 +475,36 @@ dfdr_plot_pep_reliability_tdc <- function(rel_tbl,
 
 #' Plot (pseudo-)p-value density by decoy/target
 #'
-#' @param x A dfdr_tbl with column p and is_decoy.
-#' @param p_max Max p-value displayed (default 1).
-#' @param bw Bandwidth passed to geom_density (optional).
-#' @param adjust Smoothing adjustment (default 1).
-#' @param title Plot title.
-#' @param log10_x If TRUE, plot -log10(p) instead of p (often more informative).
-#' @param eps Lower bound to avoid Inf when log10_x=TRUE.
-#' @return ggplot
+#' Plots density curves of (pseudo-)p-values for targets vs decoys. Optionally
+#' plots \eqn{-\log_{10}(p)} to emphasise small p-values.
+#'
+#' @param x A \code{dfdr_tbl} with columns \code{p} and \code{is_decoy}.
+#' @param p_max Numeric. Maximum p-value displayed (default 1).
+#' @param bw Bandwidth passed to \code{ggplot2::geom_density()}.
+#' @param adjust Numeric smoothing adjustment passed to \code{geom_density()}.
+#' @param title Character. Plot title.
+#' @param log10_x Logical. If \code{TRUE}, plot \eqn{-\log_{10}(p)} instead of \code{p}.
+#' @param eps Numeric. Lower bound used to avoid \code{Inf} when \code{log10_x = TRUE}.
+#'
+#' @return A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 4000
+#' df <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   run = "run1",
+#'   is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+#'   score = rnorm(n),
+#'   q = stats::runif(n, 0, 0.05),
+#'   pep = NA_real_,
+#'   p = stats::runif(n)
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy", p_source = "toy")
+#' dfdr_plot_p_density_by_decoy(x, log10_x = TRUE)
+#'
 #' @export
 dfdr_plot_p_density_by_decoy <- function(x,
                                          p_max = 1,
@@ -337,32 +540,49 @@ dfdr_plot_p_density_by_decoy <- function(x,
 }
 
 
-
-
-#' Plot Storey-style estimated FDR curve: pi0 * m * t / R(t)
+#' Plot Storey-style estimated FDR curve: \eqn{\hat\pi_0 m t / R(t)}
 #'
-#' Given p-values (or pseudo-p-values), estimates pi0 using cp4p::estim.pi0()
-#' and plots the curve:
-#'   FDR_hat(t) = (pi0_hat * m * t) / R(t),
-#' where R(t) = Card(p <= t), m = total number of tested hypotheses (after filtering).
+#' Given p-values (or pseudo-p-values), estimates \eqn{\pi_0} using
+#' \code{cp4p::estim.pi0()} and plots
+#' \deqn{\widehat{\mathrm{FDR}}(t) = \hat\pi_0 \, m \, t / R(t),}
+#' where \eqn{R(t) = \#\{p \le t\}} and \eqn{m} is the number of finite p-values.
 #'
-#' @param x A dfdr_tbl (or data.frame) containing columns \code{id}, \code{p}, \code{is_decoy}.
-#' @param sel Subset to use: "all", "target", or "decoy" (case-insensitive).
-#'   For "target", keeps !is_decoy; for "decoy", keeps is_decoy.
-#' @param pi0.method Passed to cp4p::estim.pi0(). One of "st.spline","st.boot","jiang",
-#'   "histo","langaas","pounds","abh","slim". (Do not use "ALL" here.)
-#' @param nbins,pz Passed to cp4p::estim.pi0().
-#' @param t_grid Grid of t values in (0,1] at which to evaluate the curve.
-#' @param r_min Numeric value, uses to compute R(t) := Card(p <= t) + r_min to avoid division by zero at tiny t.
-#' @param cap_one If TRUE, caps FDR_hat at 1.
+#' @param x A \code{dfdr_tbl} (or data.frame) containing columns \code{id},
+#'   \code{p}, and \code{is_decoy}.
+#' @param sel Character. Subset to use: \code{"all"}, \code{"target"}, or \code{"decoy"}.
+#' @param pi0.method Character. Method passed to \code{cp4p::estim.pi0()} (not \code{"ALL"}).
+#' @param nbins Integer. Passed to \code{cp4p::estim.pi0()}.
+#' @param pz Numeric. Passed to \code{cp4p::estim.pi0()}.
+#' @param t_grid Numeric vector of thresholds in \eqn{(0,1]} at which to evaluate the curve.
+#' @param r_min Numeric. Minimum value used to determine when to compute the curve
+#'   to avoid division by zero at tiny \code{t}.
+#' @param cap_one Logical. If \code{TRUE}, caps \code{fdr_hat} at 1.
 #'
-#' @return A list with:
-#'   \itemize{
-#'     \item plot: ggplot object
-#'     \item data: tibble with t, R, fdr_hat
-#'     \item pi0_hat: numeric
-#'     \item m: integer
-#'   }
+#' @return
+#' A list with components:
+#' \describe{
+#'   \item{plot}{A \link[ggplot2:ggplot]{ggplot} object.}
+#'   \item{data}{A \link[tibble:tibble]{tibble} with columns \code{t}, \code{R}, and \code{fdr_hat}.}
+#'   \item{pi0_hat}{Numeric scalar \eqn{\hat\pi_0}.}
+#'   \item{m}{Integer. Number of finite p-values used.}
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' if (requireNamespace("cp4p", quietly = TRUE)) {
+#'   set.seed(1)
+#'   n <- 4000
+#'   df <- tibble(
+#'     id = as.character(seq_len(n)),
+#'     is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+#'     p = c(stats::runif(3600), stats::rbeta(400, 0.3, 1))
+#'   )
+#'   out <- dfdr_plot_fdrhat_pi0(df, sel = "all", pi0.method = "pounds", nbins = 10)
+#'   out$pi0_hat
+#'   out$plot
+#' }
+#'
 #' @export
 dfdr_plot_fdrhat_pi0 <- function(x,
                                  sel = c("all","target","decoy"),

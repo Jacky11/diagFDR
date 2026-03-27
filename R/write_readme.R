@@ -1,12 +1,42 @@
-#' Write a human-readable README.md report
+#' Write a human-readable \code{README.md} report
 #'
-#' Produces a lightweight narrative report (Markdown) mapping the export folder
-#' to key diagnostics (scope/unit, stability, calibration) and linking plots/tables.
+#' Produces a lightweight narrative report in Markdown that summarises the most
+#' important diagnostics (headline summary, key plots, exported tables) and records
+#' per-list metadata (unit, scope, q-source, etc.) from a \code{\link{dfdr_run_all}}
+#' result. This is intended to accompany an export folder for auditing and sharing.
 #'
-#' @param diag Output of \code{\link{dfdr_run_all}}.
-#' @param out_dir Output directory.
-#' @param filename Markdown filename (default "README.md").
-#' @return Invisibly returns the path to the README.
+#' @param diag A list as returned by \code{\link{dfdr_run_all}}.
+#' @param out_dir Character scalar. Output directory (created if it does not exist).
+#' @param filename Character scalar. Markdown filename (default \code{"README.md"}).
+#'
+#' @return
+#' The path to the written README file, returned invisibly. The function is called
+#' for its side effect of writing a file to disk.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' # Minimal dfdr_run_all-like object for demonstrating README writing
+#' df <- tibble(
+#'   id = c("1","2","3"),
+#'   run = "run1",
+#'   is_decoy = c(FALSE, TRUE, FALSE),
+#'   score = c(10, 9, 8),
+#'   q = c(0.01, 0.02, 0.03),
+#'   pep = NA_real_
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+#'
+#' diag <- list(
+#'   objects = list(toy = x),
+#'   params = list(alpha_main = 0.01),
+#'   tables = list(headline = tibble(list = "toy", alpha = 0.01)),
+#'   warnings = character()
+#' )
+#'
+#' out_dir <- tempdir()
+#' dfdr_write_readme(diag, out_dir = out_dir, filename = "README_example.md")
+#'
 #' @export
 dfdr_write_readme <- function(diag, out_dir, filename = "README.md") {
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)

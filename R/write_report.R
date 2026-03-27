@@ -1,16 +1,49 @@
 #' Write diagnostic outputs to a folder
 #'
-#' Writes tables as CSV and plots as PNG, optionally creates a PPTX (requires officer+rvg).
-#' Also writes a lightweight manifest and README for human-readable reporting.
+#' Exports the output of \code{\link{dfdr_run_all}} to disk. Depending on selected
+#' \code{formats}, this function can:
+#' \itemize{
+#'   \item write diagnostic tables as CSV;
+#'   \item write plots as PNG;
+#'   \item create a PowerPoint (\code{.pptx}) containing the plots (requires \pkg{officer} and \pkg{rvg} in Suggests);
+#'   \item write a lightweight manifest (\code{\link{dfdr_write_manifest}});
+#'   \item write a human-readable \code{README.md} (\code{\link{dfdr_write_readme}});
+#'   \item write a compact headline summary table (\code{summary_headline.csv}).
+#' }
 #'
-#' @param diag Output of \code{\link{dfdr_run_all}}.
-#' @param out_dir Output directory.
-#' @param formats Character vector subset of \code{c("csv","png","pptx","manifest","readme")}.
-#' @param pptx_path PPTX path (only used if \code{"pptx"} in formats).
-#' @param width,height Plot size passed to \code{ggplot2::ggsave}.
-#' @param dpi DPI passed to \code{ggplot2::ggsave}.
+#' @param diag A list as returned by \code{\link{dfdr_run_all}}.
+#' @param out_dir Character scalar. Output directory (created if it does not exist).
+#' @param formats Character vector. Subset of
+#'   \code{c("csv","png","pptx","manifest","readme","summary")}.
+#' @param pptx_path Character scalar. Output path for the PPTX file (only used if
+#'   \code{"pptx"} is included in \code{formats}).
+#' @param width,height Numeric. Plot size (in inches) passed to \code{ggplot2::ggsave()}
+#'   when writing PNGs.
+#' @param dpi Numeric. DPI passed to \code{ggplot2::ggsave()}.
 #'
-#' @return Invisibly returns \code{TRUE}.
+#' @return
+#' Returns \code{TRUE} invisibly. The function is called for its side effects of
+#' writing files to \code{out_dir}.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' # Create a minimal diag object with one table and one plot
+#' diag <- list(
+#'   tables = list(headline = tibble(list = "toy", alpha = 0.01, D_alpha = 10)),
+#'   plots = list(example_plot = ggplot2::ggplot(tibble(x = 1:3, y = 1:3),
+#'                                              ggplot2::aes(x, y)) +
+#'                 ggplot2::geom_point()),
+#'   objects = list(),
+#'   params = list(alpha_main = 0.01),
+#'   warnings = character()
+#' )
+#'
+#' out_dir <- tempdir()
+#' dfdr_write_report(
+#' diag, out_dir = out_dir,
+#' formats = c("csv", "png", "summary", "manifest", "readme"))
+#'
 #' @export
 dfdr_write_report <- function(diag,
                               out_dir,

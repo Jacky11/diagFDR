@@ -1,15 +1,49 @@
 #' BH diagnostics at a headline alpha (threshold, discoveries, boundary support)
 #'
-#' Computes the BH rejection threshold t_alpha, the number of discoveries R_alpha,
-#' and "boundary support" near t_alpha (counts of p-values just above the cutoff).
+#' Computes the Benjamini--Hochberg (BH) rejection threshold \eqn{t_\alpha}, the
+#' number of discoveries \eqn{R_\alpha}, and a simple "boundary support" measure:
+#' the number of p-values just above \eqn{t_\alpha}. Boundary support is intended
+#' to indicate how sensitive the discovery set may be to small perturbations of
+#' p-values near the cutoff.
 #'
-#' @param x A dfdr_tbl containing columns \code{id} and \code{p}.
-#' @param alpha BH FDR level in (0,1).
-#' @param boundary One of \code{"mult"} or \code{"add"}.
-#' @param win Relative width for multiplicative boundary window (default 0.2).
-#' @param delta Additive width for additive boundary window (required if boundary="add").
+#' @param x A \code{dfdr_tbl} (or data frame) containing columns \code{id} and
+#'   \code{p}.
+#' @param alpha Numeric BH FDR level in \eqn{(0,1)}.
+#' @param boundary Character. One of \code{"mult"} (multiplicative window) or
+#'   \code{"add"} (additive window).
+#' @param win Numeric. Relative width for the multiplicative boundary window
+#'   (default 0.2). Used when \code{boundary = "mult"}, defining the interval
+#'   \eqn{(t_\alpha, (1+\mathrm{win})t_\alpha]}.
+#' @param delta Numeric. Additive width for the additive boundary window. Required
+#'   when \code{boundary = "add"}, defining the interval \eqn{(t_\alpha, t_\alpha+\delta]}.
 #'
-#' @return A list with elements \code{headline} (tibble) and \code{accepted} (character vector of IDs).
+#' @return
+#' A list with two elements:
+#' \describe{
+#'   \item{headline}{A one-row \link[tibble:tibble]{tibble} containing BH summary
+#'   diagnostics, including \code{t_alpha} (the BH threshold), \code{R_alpha} (the
+#'   number of rejected hypotheses / discoveries), and \code{N_boundary} (the
+#'   number of p-values in a right-neighborhood above the cutoff as determined by
+#'   \code{boundary}, \code{win}, and \code{delta}).}
+#'   \item{accepted}{A character vector of \code{id} values corresponding to
+#'   discoveries (rows with \code{p <= t_alpha}). If no finite BH threshold exists,
+#'   this is \code{character(0)}.}
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 5000
+#' x <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   p = c(stats::runif(4500), stats::rbeta(500, 0.3, 1))
+#' )
+#'
+#' out <- dfdr_bh_diagnostics(x, alpha = 0.01, boundary = "mult", win = 0.2)
+#' out$headline
+#' length(out$accepted)
+#'
 #' @export
 dfdr_bh_diagnostics <- function(x,
                                 alpha = 0.01,

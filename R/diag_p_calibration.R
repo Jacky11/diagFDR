@@ -1,16 +1,47 @@
 #' P-value calibration diagnostic (ECDF vs uniform; stratified)
 #'
-#' Computes empirical CDF values Fhat(u) for a grid of u and reports
-#' inflation metrics such as max(Fhat(u) - u) in a decision-relevant region.
-#' Intended as a plausibility diagnostic for (pseudo-)p-values.
+#' Computes the empirical CDF \eqn{\hat F(u) = P(p \le u)} on a grid of \code{u}
+#' values and summarises departures from uniformity in a decision-relevant region
+#' \eqn{u \le u_{\max}}. Intended as a plausibility diagnostic for (pseudo-)p-values
+#' (e.g. under the null, \eqn{\hat F(u) \approx u}).
 #'
-#' @param x A dfdr_tbl (or data.frame) containing columns \code{id} and \code{p}.
-#' @param u_grid Numeric vector in (0,1]. Grid of u values for evaluating the ECDF.
-#' @param u_max Numeric in (0,1]. Upper bound of u used for inflation summaries (default 0.1).
-#' @param stratify Optional character vector of column names used to stratify diagnostics.
-#' @param min_n Minimum number of finite p-values required per stratum.
+#' @param x A \code{dfdr_tbl} (or data.frame) containing columns \code{id} and \code{p}.
+#' @param u_grid Numeric vector in \eqn{(0,1]}. Grid of \code{u} values for evaluating the ECDF.
+#' @param u_max Numeric scalar in \eqn{(0,1]}. Upper bound of \code{u} used for
+#'   inflation summaries (default 0.1).
+#' @param stratify Optional character vector of column names used to stratify
+#'   diagnostics (e.g. \code{c("run")}).
+#' @param min_n Integer. Minimum number of finite p-values required per stratum.
 #'
-#' @return A list with elements \code{ecdf} (tibble) and \code{summary} (tibble).
+#' @return
+#' A list with components:
+#' \describe{
+#'   \item{ecdf}{A \link[tibble:tibble]{tibble} with columns \code{stratum},
+#'   \code{u}, \code{Fhat}, and \code{n}. There is one row per \code{u} value per
+#'   stratum.}
+#'   \item{summary}{A tibble with one row per stratum, including \code{n} (number
+#'   of finite p-values), \code{max_inflation} (maximum of \code{Fhat(u)-u} for
+#'   \code{u <= u_max}), and \code{auc_inflation} (area under the positive part of
+#'   \code{Fhat(u)-u} on \eqn{[0,u_{\max}]}, normalised by \code{u_max}). Strata
+#'   with \code{n < min_n} are reported with \code{NA} metrics and a \code{note}.}
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 5000
+#' df <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   run = sample(c("run1", "run2"), n, replace = TRUE),
+#'   # mostly uniform p-values + a small enriched component
+#'   p = c(stats::runif(4500), stats::rbeta(500, 0.3, 1))
+#' )
+#'
+#' out <- dfdr_p_calibration(df, stratify = "run", u_max = 0.1, min_n = 200)
+#' head(out$ecdf)
+#' out$summary
+#'
 #' @export
 dfdr_p_calibration <- function(x,
                                u_grid = c(seq(0.001, 0.1, by = 0.001), seq(0.11, 1, by = 0.01)),
@@ -94,9 +125,31 @@ dfdr_p_calibration <- function(x,
 
 #' Plot p-value calibration (ECDF minus uniform)
 #'
-#' @param ecdf_tbl Output \code{$ecdf} from \code{\link{dfdr_p_calibration}}.
-#' @param title Plot title.
-#' @return A ggplot object.
+#' Plots \eqn{\hat F(u) - u} against \eqn{u} using the \code{ecdf} component
+#' returned by \code{\link{dfdr_p_calibration}}. Values above zero indicate
+#' potential inflation (excess of small p-values) relative to uniform.
+#'
+#' @param ecdf_tbl A tibble, typically \code{out$ecdf} from \code{\link{dfdr_p_calibration}}.
+#'   Must contain columns \code{stratum}, \code{u}, and \code{Fhat}.
+#' @param title Character. Plot title.
+#'
+#' @return
+#' A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 2000
+#' df <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   run = sample(c("run1", "run2"), n, replace = TRUE),
+#'   p = c(stats::runif(1800), stats::rbeta(200, 0.3, 1))
+#' )
+#' cal <- dfdr_p_calibration(df, stratify = "run", min_n = 100)
+#' p <- dfdr_plot_p_calibration(cal$ecdf)
+#' p
+#'
 #' @export
 dfdr_plot_p_calibration <- function(ecdf_tbl,
                                     title = "P-value calibration: ECDF(p) - u") {
@@ -111,15 +164,47 @@ dfdr_plot_p_calibration <- function(ecdf_tbl,
 
 #' P-value calibration plot (cp4p-style), with multiple pi0 reference curves
 #'
-#' Plots ECDF of (1-p) against reference curves derived from cp4p::estim.pi0()
-#' using multiple pi0 estimation methods.
+#' Plots the ECDF of \eqn{1-p} and overlays reference curves derived from
+#' \code{cp4p::estim.pi0()} using multiple \eqn{\pi_0} estimation methods.
+#' This provides a visual plausibility check for p-value calibration.
 #'
-#' @param x A dfdr_tbl (or data.frame) containing columns id, is_decoy, p.
-#' @param sel Subset: "all", "decoy", or "target".
-#' @param nbins,pz Passed to cp4p::estim.pi0().
-#' @param step Grid step for abs = 1-p.
-#' @param return_data If TRUE, return plot + computed data.
-#' @return ggplot (or list if return_data=TRUE)
+#' @param x A \code{dfdr_tbl} (or data.frame) containing columns \code{id},
+#'   \code{is_decoy}, and \code{p}.
+#' @param sel Character. Subset to use: \code{"all"}, \code{"decoy"}, or \code{"target"}.
+#' @param nbins Integer. Passed to \code{cp4p::estim.pi0()}.
+#' @param pz Numeric. Passed to \code{cp4p::estim.pi0()}.
+#' @param step Numeric. Grid step size for \code{abs = 1 - p}.
+#' @param return_data Logical. If \code{TRUE}, return both the plot and the
+#'   computed data used to build it.
+#'
+#' @return
+#' If \code{return_data = FALSE} (default), returns a
+#' \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' If \code{return_data = TRUE}, returns a list with components:
+#' \describe{
+#'   \item{plot}{A ggplot object.}
+#'   \item{pi0}{Named numeric vector of \eqn{\pi_0} estimates (one per method).}
+#'   \item{data}{A list with \code{main} (ECDF data) and \code{ref} (reference
+#'   curve data).}
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 2000
+#' df <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.9, 0.1)),
+#'   p = c(stats::runif(1800), stats::rbeta(200, 0.3, 1))
+#' )
+#'
+#' if (requireNamespace("cp4p", quietly = TRUE)) {
+#'   g <- dfdr_plot_p_calibration2(df, sel = "all", return_data = FALSE)
+#'   g
+#' }
+#'
 #' @export
 dfdr_plot_p_calibration2 <- function(x,
                                      sel = c("all", "decoy", "target"),

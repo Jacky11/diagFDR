@@ -1,55 +1,3 @@
-#' Read a Spectronaut TSV report
-#'
-#' Uses data.table::fread for efficient reading of large files.
-#' Spectronaut uses comma as decimal separator in some locales;
-#' adjust dec argument if needed.
-#'
-#' @param path Path to Spectronaut report (TSV)
-#' @param dec Decimal separator (default ".")
-#' @param select Optional character vector of columns to read (NULL = all)
-#' @return data.table with Spectronaut columns
-#' @export
-read_spectronaut <- function(path, dec = ".", select = NULL) {
-  if (!requireNamespace("data.table", quietly = TRUE)) {
-    rlang::abort("Reading Spectronaut requires 'data.table' package (install.packages('data.table')).")
-  }
-  if (!file.exists(path)) rlang::abort(paste0("File not found: ", path))
-
-  # Spectronaut exports can be huge; fread is much faster than read.delim
-  dt <- data.table::fread(
-    path,
-    sep = "\t",
-    dec = dec,
-    select = select,
-    showProgress = TRUE
-  )
-
-  tibble::as_tibble(dt)
-}
-
-#' Read Spectronaut efficiently with column selection
-#'
-#' For very large files, read only the columns needed for diagnostics.
-#'
-#' @param path Path to Spectronaut TSV
-#' @param minimal If TRUE, read only essential columns for precursor-level diagnostics
-#' @param dec Decimal separator (use "," for European locales)
-#' @return tibble
-#' @export
-read_spectronaut_efficient <- function(path, minimal = TRUE, dec = ".") {
-  if (minimal) {
-    select_cols <- c(
-      "R.FileName", "R.Condition",
-      "EG.PrecursorId", "EG.IsDecoy",
-      "EG.Qvalue", "EG.GlobalPrecursorQvalue",
-      "EG.PEP", "EG.Cscore", "EG.NormalizedCscore"
-    )
-    read_spectronaut(path, dec = dec, select = select_cols)
-  } else {
-    read_spectronaut(path, dec = dec, select = NULL)
-  }
-}
-
 #' Detect Spectronaut run column name
 #' @keywords internal
 spectronaut_detect_run_col <- function(df, candidates = c("R.FileName", "R.Condition", "File.Name")) {
@@ -98,42 +46,153 @@ spectronaut_recompute_q_from_score <- function(df) {
     dplyr::select(-.data$rank, -.data$cumsum_decoy, -.data$cumsum_total)
 }
 
-#' Spectronaut -> runxprecursor universe (deduplicated within run by EG.PrecursorId)
+#' Read a Spectronaut TSV report
 #'
+#' Reads a Spectronaut report exported as tab-separated values (TSV). Uses
+#' \code{data.table::fread()} for efficient reading of large files.
 #'
-#' @param rep Spectronaut report tibble (from read_spectronaut or read_spectronaut_efficient)
-#' @param q_col q-value column name (default "EG.Qvalue" for run-wise FDR control)
-#' @param run_col optional; auto-detect if NULL (looks for R.FileName or R.Condition)
-#' @param pep_col optional PEP column (default "EG.PEP")
-#' @param score_col optional score column (default "EG.Cscore")
-#' @param q_max_export export ceiling (default 1.0)
-#' @param recompute_q If TRUE and decoys lack valid q-values, recompute from score per run.
-#'   This is typically necessary as Spectronaut exports NaN q-values for decoys.
-#' @param id_mode "id" (default) sets id=EG.PrecursorId and keeps run separate;
-#'   "runxid" sets id = run||precursor for global uniqueness
-#' @param unit Unit metadata (default "runxprecursor")
-#' @param scope Scope metadata (default "runwise")
-#' @param q_source Source label for metadata
-#' @return dfdr_tbl with run column filled, suitable for run-wise FDR diagnostics
+#' Spectronaut may use a comma as decimal separator in some locales; set
+#' \code{dec=","} when needed.
 #'
-#' @details
-#' When Spectronaut exports decoys with NaN q-values (typical behavior), this function
-#' recomputes q-values from scores per run using target-decoy competition. This respects
-#' the statistical structure where each run×precursor is an independent hypothesis and
-#' avoids pooling scores that may not be on comparable scales across runs.
+#' @param path Character scalar. Path to a Spectronaut report TSV file.
+#' @param dec Character scalar. Decimal separator passed to \code{fread()} (default \code{"."}).
+#' @param select Optional character vector of column names to read; \code{NULL} reads all columns.
 #'
+#' @return
+#' A \link[tibble:tibble]{tibble} containing the columns present in the Spectronaut
+#' report (column names depend on the export configuration).
 #'
 #' @examples
-#' \dontrun{
-#' # Read Spectronaut report (use dec="," for European exports)
-#' rep <- read_spectronaut_efficient("spectronaut_report.tsv", dec = ",")
-#'
-#' # Create run-wise universe for FDR diagnostics
-#' univ <- spectronaut_runxprecursor(rep, q_col = "EG.Qvalue")
-#'
-#' # Run diagnostics
-#' results <- dfdr_run_all(list(runwise = univ), derive_p = FALSE)
+#' if (requireNamespace("data.table", quietly = TRUE)) {
+#'   # Create a tiny TSV and read it back
+#'   tmp <- tempfile(fileext = ".tsv")
+#'   txt <- paste0(
+#'     "R.FileName\tEG.PrecursorId\tEG.IsDecoy\tEG.Qvalue\tEG.PEP\tEG.Cscore\n",
+#'     "run1\tP1\tFalse\t0.01\t0.02\t120\n",
+#'     "run1\tP2\tTrue\tNaN\t0.90\t10\n"
+#'   )
+#'   writeLines(txt, tmp)
+#'   read_spectronaut(tmp)
 #' }
+#'
+#' @export
+read_spectronaut <- function(path, dec = ".", select = NULL) {
+  if (!requireNamespace("data.table", quietly = TRUE)) {
+    rlang::abort("Reading Spectronaut requires 'data.table' package (install.packages('data.table')).")
+  }
+  if (!file.exists(path)) rlang::abort(paste0("File not found: ", path))
+
+  # Spectronaut exports can be huge; fread is much faster than read.delim
+  dt <- data.table::fread(
+    path,
+    sep = "\t",
+    dec = dec,
+    select = select,
+    showProgress = TRUE
+  )
+
+  tibble::as_tibble(dt)
+}
+
+#' Read Spectronaut efficiently with column selection
+#'
+#' Convenience wrapper around \code{\link{read_spectronaut}}. For very large
+#' Spectronaut reports, reading only a minimal set of columns can substantially
+#' speed up I/O and reduce memory usage.
+#'
+#' @param path Character scalar. Path to a Spectronaut TSV report.
+#' @param minimal Logical. If \code{TRUE} (default), reads only columns typically
+#'   needed for precursor-level diagnostics; if \code{FALSE}, reads all columns.
+#' @param dec Character scalar. Decimal separator (use \code{","} for some locales).
+#'
+#' @return
+#' A \link[tibble:tibble]{tibble} containing either the selected minimal columns
+#' (if \code{minimal=TRUE}) or all columns (if \code{minimal=FALSE}).
+#'
+#' @examples
+#' if (requireNamespace("data.table", quietly = TRUE)) {
+#'   tmp <- tempfile(fileext = ".tsv")
+#'   txt <- paste0(
+#'     "R.FileName\tR.Condition\tEG.PrecursorId\tEG.IsDecoy\tEG.Qvalue\tEG.PEP\tEG.Cscore\n",
+#'     "run1\tcondA\tP1\tFalse\t0.01\t0.02\t120\n",
+#'     "run1\tcondA\tP2\tTrue\tNaN\t0.90\t10\n"
+#'   )
+#'   writeLines(txt, tmp)
+#'   read_spectronaut_efficient(tmp, minimal = TRUE)
+#' }
+#'
+#' @export
+read_spectronaut_efficient <- function(path, minimal = TRUE, dec = ".") {
+  if (minimal) {
+    select_cols <- c(
+      "R.FileName", "R.Condition",
+      "EG.PrecursorId", "EG.IsDecoy",
+      "EG.Qvalue", "EG.GlobalPrecursorQvalue",
+      "EG.PEP", "EG.Cscore", "EG.NormalizedCscore"
+    )
+    read_spectronaut(path, dec = dec, select = select_cols)
+  } else {
+    read_spectronaut(path, dec = dec, select = NULL)
+  }
+}
+
+#' Spectronaut -> run-by-precursor universe (deduplicated within run by \code{EG.PrecursorId})
+#'
+#' Constructs a run-wise precursor universe from a Spectronaut report. The output
+#' is suitable for run-wise FDR diagnostics because each row corresponds to a
+#' \code{run} \eqn{\times} \code{precursor} hypothesis.
+#'
+#' If Spectronaut exports \code{NaN} q-values for decoys (common), the function can
+#' optionally recompute q-values from scores per run using target-decoy competition.
+#'
+#' @param rep Spectronaut report tibble (e.g. returned by \code{\link{read_spectronaut}}
+#'   or \code{\link{read_spectronaut_efficient}}).
+#' @param q_col Character. q-value column name (default \code{"EG.Qvalue"} for run-wise control).
+#' @param run_col Optional character. Run column name; if \code{NULL}, attempts to
+#'   detect one of \code{"R.FileName"} or \code{"R.Condition"}.
+#' @param pep_col Optional character. PEP column name (default \code{"EG.PEP"}).
+#' @param score_col Optional character. Score column name (default \code{"EG.Cscore"}).
+#' @param q_max_export Numeric. Export ceiling for q-values (default 1.0), stored in metadata.
+#' @param recompute_q Logical. If \code{TRUE} (default) and decoys lack finite q-values,
+#'   recompute q-values from \code{score_col} per run.
+#' @param id_mode Character. \code{"id"} (default) uses \code{id = EG.PrecursorId} and keeps
+#'   \code{run} separate; \code{"runxid"} uses \code{id = "run||precursor"} for global uniqueness.
+#' @param unit Character. Unit metadata stored in the returned object.
+#' @param scope Character. Scope metadata stored in the returned object.
+#' @param q_source Character. Source label stored in metadata.
+#'
+#' @return
+#' A \code{dfdr_tbl} (tibble subclass) with one row per \code{run} \eqn{\times}
+#' \code{precursor}. The returned table contains the standard columns required by
+#' \code{diagFDR}: \code{id}, \code{is_decoy}, \code{q}, \code{pep}, \code{run}, \code{score}.
+#' Metadata (including whether q-values were recomputed) are stored in \code{attr(x, "meta")}.
+#'
+#' @details
+#' When Spectronaut exports decoys with \code{NaN} q-values, recomputing q-values
+#' from scores is performed *per run* to respect the run-wise hypothesis structure
+#' and to avoid pooling scores across runs that may not be comparable.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' # Minimal toy Spectronaut-like report
+#' rep <- tibble(
+#'   R.FileName = c("run1","run1","run1","run2","run2","run2"),
+#'   EG.PrecursorId = c("P1","P2","P3","P1","P2","P4"),
+#'   EG.IsDecoy = c("False","True","False","False","True","False"),
+#'   EG.Qvalue = c(0.01, NaN, 0.02, 0.03, NaN, 0.04),
+#'   EG.PEP = c(0.02, 0.9, 0.05, 0.06, 0.95, 0.08),
+#'   EG.Cscore = c(120, 10, 80, 100, 5, 60)
+#' )
+#'
+#' x <- spectronaut_runxprecursor(
+#'   rep,
+#'   q_col = "EG.Qvalue",
+#'   run_col = "R.FileName",
+#'   recompute_q = TRUE,
+#'   id_mode = "runxid"
+#' )
+#' x
 #'
 #' @export
 spectronaut_runxprecursor <- function(rep,

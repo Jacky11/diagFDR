@@ -1,9 +1,48 @@
 #' Flag diagnostic values based on heuristic thresholds
 #'
-#' Produces ASCII-only flags for portability. Rendering as icons is handled in the HTML template.
+#' Adds simple, ASCII-only flags and a coarse overall status to a headline
+#' diagnostics table (typically produced by \code{\link{dfdr_headline}} or the
+#' \code{headline} table inside \code{\link{dfdr_run_all}}). The heuristics are
+#' intended for quick triage in reports; they do not replace manual review.
 #'
-#' @param headline_tbl Output from dfdr_headline (possibly stacked)
-#' @return Same table with added columns: status, flags, interpretation
+#' Rendering as icons (if desired) can be handled downstream (e.g. in an HTML
+#' template); this function returns plain text labels for portability.
+#'
+#' @param headline_tbl A data.frame/tibble of headline diagnostics. It may contain
+#'   one or multiple rows. If some expected columns are missing, they are created
+#'   and filled with \code{NA}.
+#'
+#' @return
+#' A \link[tibble:tibble]{tibble} (or data frame) with the same rows as
+#' \code{headline_tbl} and additional columns:
+#' \describe{
+#'   \item{flag_Dalpha}{Flag based on \code{D_alpha} (decoy support).}
+#'   \item{flag_CV}{Flag based on \code{CV_hat} (stability/variability).}
+#'   \item{flag_Dwin}{Flag based on \code{D_alpha_win} (local tail support).}
+#'   \item{flag_IPE}{Flag based on \code{IPE} (internal PEP calibration error).}
+#'   \item{flag_FDR}{Flag comparing \code{FDR_hat} to the nominal \code{alpha}.}
+#'   \item{flag_equalchance}{Flag based on \code{effect_abs} (equal-chance deviation).}
+#'   \item{status}{Overall triage status: \code{"VALID"}, \code{"CAUTION"}, or
+#'   \code{"REVIEW_NEEDED"}.}
+#'   \item{interpretation}{A short human-readable interpretation string.}
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' headline_tbl <- tibble(
+#'   list = c("A", "B"),
+#'   alpha = 0.01,
+#'   D_alpha = c(5, 80),
+#'   CV_hat = c(0.35, 0.10),
+#'   D_alpha_win = c(2, 30),
+#'   IPE = c(0.12, 0.02),
+#'   FDR_hat = c(0.02, 0.009),
+#'   effect_abs = c(0.18, 0.05)
+#' )
+#'
+#' flag_headline(headline_tbl)
+#'
 #' @export
 flag_headline <- function(headline_tbl) {
   if (!is.data.frame(headline_tbl)) {

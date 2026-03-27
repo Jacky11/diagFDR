@@ -1,42 +1,72 @@
-#' Read MaxQuant msms.txt into a dfdr_tbl (PSM-level; TDC q-values)
+#' Read MaxQuant \code{msms.txt} into a \code{dfdr_tbl} (PSM-level; reconstructed TDC q-values)
 #'
-#' Reads a MaxQuant \code{msms.txt} file and returns a \code{dfdr_tbl} at PSM level.
-#' q-values are reconstructed by target-decoy counting (TDC) using MaxQuant \code{Score}
-#' (higher is better) and the \code{Reverse} column as decoy indicator.
+#' Reads a MaxQuant \code{msms.txt} file and returns a \code{dfdr_tbl} at the PSM
+#' level. q-values are reconstructed by target-decoy counting (TDC) using MaxQuant
+#' \code{Score} (higher is better) and the \code{Reverse} column as the decoy
+#' indicator (\code{"+"} for decoy).
 #'
-#' #' Required columns in \code{msms.txt}:
+#' @details
+#' Required columns in \code{msms.txt}:
 #' \itemize{
 #'   \item \code{id} (unique PSM identifier; numeric or character)
 #'   \item \code{Raw file} (run name)
-#'   \item \code{Reverse} (MaxQuant decoy indicator; \code{"+"} for decoy)
+#'   \item \code{Reverse} (MaxQuant decoy indicator; \code{"+"} for decoy; blank/NA for target)
 #'   \item \code{Score} (MaxQuant score; higher is better)
-#'   \item \code{PEP} (posterior error probability)
+#'   \item \code{PEP} (posterior error probability; optional in practice, see \code{pep_mode})
 #' }
 #'
 #' The function computes q-values by target-decoy counting (TDC) using \code{Score}
 #' and the \code{Reverse} decoy label:
-#' \deqn{\widehat{FDR}(i) = (D(i) + add\_decoy) / T(i), \qquad q(i) = \min_{j \ge i}\widehat{FDR}(j)}
+#' \deqn{\widehat{\mathrm{FDR}}(i) = (D(i) + add\_decoy) / T(i), \qquad
+#'      q(i) = \min_{j \ge i}\widehat{\mathrm{FDR}}(j)}
 #'
-#' Contaminants are not treated as decoys. If \code{Potential contaminant} is present and
-#' \code{exclude_contaminants = TRUE}, those rows are removed.
-#'
+#' Contaminants are not treated as decoys. If the column
+#' \code{Potential contaminant} exists and \code{exclude_contaminants = TRUE},
+#' those rows are removed prior to computing q-values.
 #'
 #' @param path Character scalar. Path to MaxQuant \code{msms.txt}.
 #' @param pep_mode Character. How to handle the \code{PEP} column:
 #'   \describe{
-#'     \item{\code{"drop"}}{Set \code{pep = NA} for all rows (recommended if PEP>1 occurs).}
-#'     \item{\code{"sanitize"}}{Keep finite PEP in `[0,1]`, set other finite values to NA and warn.}
-#'     \item{\code{"strict"}}{Error if any finite PEP is outside `[0,1]`.}
+#'     \item{\code{"drop"}}{Set \code{pep = NA} for all rows.}
+#'     \item{\code{"sanitize"}}{Keep finite PEP in \code{[0,1]}; set other finite values to \code{NA} and warn.}
+#'     \item{\code{"strict"}}{Error if any finite PEP is outside \code{[0,1]}.}
 #'   }
-#' @param exclude_contaminants Logical. If TRUE and a \code{Potential contaminant} column exists,
-#'   rows with \code{"+"} are removed. Default TRUE.
-#' @param add_decoy Integer scalar. Additive correction in TDC:
-#'   \eqn{\widehat{FDR} = (D + add\_decoy) / T}. Default 1.
-#' @param unit Character. Stored in dfdr_tbl metadata. Default \code{"psm"}.
-#' @param scope Character. Stored in dfdr_tbl metadata. Default \code{"global"}.
-#' @param provenance Named list. Stored in dfdr_tbl metadata.
+#' @param exclude_contaminants Logical. If \code{TRUE} and a
+#'   \code{Potential contaminant} column exists, rows with \code{"+"} are removed.
+#'   Default is \code{TRUE}.
+#' @param add_decoy Integer scalar. Additive correction in the TDC estimate:
+#'   \eqn{\widehat{\mathrm{FDR}} = (D + add\_decoy)/T}. Default is 1.
+#' @param unit Character. Unit stored in the returned object metadata (default \code{"psm"}).
+#' @param scope Character. Scope stored in the returned object metadata (default \code{"global"}).
+#' @param provenance Named list. Stored in the returned object metadata.
 #'
-#' @return A \code{dfdr_tbl}.
+#' @return
+#' A \code{dfdr_tbl} (tibble subclass) with one row per PSM and columns:
+#' \code{id}, \code{run}, \code{is_decoy}, \code{q}, \code{pep}, \code{score}.
+#' The q-values are reconstructed by TDC from \code{Score} and \code{Reverse}.
+#' Metadata are stored in \code{attr(x, "meta")} (including \code{unit}, \code{scope},
+#' \code{q_source}, and \code{provenance}).
+#'
+#' @examples
+#' if (requireNamespace("readr", quietly = TRUE)) {
+#'   # Create a tiny MaxQuant-like msms.txt and read it
+#'   tmp <- tempfile(fileext = ".txt")
+#'   txt <- paste0(
+#'     "id\tRaw file\tReverse\tScore\tPEP\tPotential contaminant\n",
+#'     "1\trun1\t\t100\t0.01\t\n",
+#'     "2\trun1\t+\t90\t0.80\t\n",
+#'     "3\trun1\t\t80\t0.02\t+\n",   # contaminant row removed when exclude_contaminants=TRUE
+#'     "4\trun2\t\t70\t0.05\t\n",
+#'     "5\trun2\t+\t60\t0.90\t\n"
+#'   )
+#'   writeLines(txt, tmp)
+#'
+#'   x <- read_dfdr_maxquant_msms(tmp, pep_mode = "sanitize",
+#'         exclude_contaminants = TRUE, add_decoy = 1L)
+#'   x
+#'   head(x$q)
+#' }
+#'
 #' @export
 read_dfdr_maxquant_msms <- function(path,
                                     pep_mode = c("drop", "sanitize", "strict"),

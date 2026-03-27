@@ -1,4 +1,19 @@
-#' Validate a dfdr_tbl
+#' Validate a \code{dfdr_tbl}
+#'
+#' Performs structural checks required by \code{diagFDR} diagnostics. This
+#' function is intended for internal use and is called by constructors and
+#' downstream diagnostics.
+#'
+#' The required columns are \code{id}, \code{is_decoy}, \code{q}, \code{pep},
+#' \code{run}, and \code{score}. If a \code{p} column is present, it is also
+#' validated.
+#'
+#' @param x A data frame (typically a tibble) to validate.
+#'
+#' @return
+#' The input \code{x} invisibly (unchanged) if validation succeeds. Otherwise an
+#' error is raised describing the first detected problem.
+#'
 #' @keywords internal
 validate_dfdr_tbl <- function(x) {
   stopifnot(is.data.frame(x))
@@ -38,17 +53,60 @@ validate_dfdr_tbl <- function(x) {
   x
 }
 
-#' Create an dfdr_tbl
+#' Create a \code{dfdr_tbl}
 #'
-#' @param x A data.frame with columns id,is_decoy,q,pep,run,score (pep/run/score can be NA).
-#' @param unit Character. E.g. "precursor", "psm", "peptide", "protein", "run×precursor".
-#' @param scope Character. E.g. "runwise", "global", "aggregated".
-#' @param q_source Character describing where q came from.
+#' Coerces input to a tibble, standardizes the \code{is_decoy} column to logical,
+#' validates required columns and types, attaches metadata, and returns an S3
+#' object of class \code{dfdr_tbl} for downstream diagnostics.
+#'
+#' @param x A data.frame with columns \code{id}, \code{is_decoy}, \code{q},
+#'   \code{pep}, \code{run}, \code{score} (where \code{pep}/\code{run}/\code{score}
+#'   may be \code{NA} if unavailable). Optionally may contain \code{p}.
+#' @param unit Character. Statistical unit, e.g. \code{"psm"}, \code{"precursor"},
+#'   \code{"peptide"}, \code{"protein"}.
+#' @param scope Character. Scope of FDR control, e.g. \code{"runwise"},
+#'   \code{"global"}, \code{"aggregated"}.
+#' @param q_source Character. Description of where q-values came from (e.g. a
+#'   column name or tool).
 #' @param q_max_export Numeric. Optional export ceiling used to generate q (if known).
-#' @param p_source Optional character describing where p came from.
-#' @param provenance Named list (tool, version, params, command).
+#' @param p_source Optional character describing where \code{p} came from.
+#' @param provenance Named list carrying provenance information (tool, version,
+#'   parameters, command, etc.).
 #'
-#' @return An object of class \code{dfdr_tbl} (inheriting from \code{tbl_df}) containing the validated input data with \code{is_decoy} coerced to logical. Metadata (\code{unit}, \code{scope}, \code{q_source}, \code{q_max_export}, \code{provenance}) are stored as attributes and accessible via \code{attr(x, "meta")}.
+#' @return
+#' An S3 object of class \code{dfdr_tbl} that inherits from
+#' \link[tibble:tibble]{tbl_df} (and \code{data.frame}). The returned object:
+#' \itemize{
+#'   \item contains the validated input data with \code{is_decoy} coerced to
+#'   logical (\code{TRUE}/\code{FALSE});
+#'   \item carries metadata in \code{attr(x, "meta")} with entries \code{unit},
+#'   \code{scope}, \code{q_source}, \code{q_max_export}, \code{p_source}, and
+#'   \code{provenance}.
+#' }
+#'
+#' @examples
+#' library(tibble)
+#'
+#' df <- tibble(
+#'   id = as.character(1:6),
+#'   run = c("run1","run1","run1","run2","run2","run2"),
+#'   is_decoy = c(FALSE, FALSE, TRUE, FALSE, TRUE, FALSE),
+#'   score = c(10, 9, 8, 7, 6, 5),
+#'   q = c(0.01, 0.02, 0.02, 0.05, 0.06, 0.07),
+#'   pep = c(0.01, 0.02, NA, 0.05, NA, 0.07)
+#' )
+#'
+#' x <- as_dfdr_tbl(
+#'   df,
+#'   unit = "psm",
+#'   scope = "global",
+#'   q_source = "toy_q",
+#'   provenance = list(tool = "toy")
+#' )
+#'
+#' x
+#' attr(x, "meta")
+#'
 #' @export
 as_dfdr_tbl <- function(x,
                         unit = NA_character_,
@@ -92,6 +150,31 @@ as_dfdr_tbl <- function(x,
   x
 }
 
+#' Print a \code{dfdr_tbl}
+#'
+#' Prints a compact header with attached metadata (unit, scope, q-source, etc.)
+#' and then falls back to the default tibble/data.frame print method.
+#'
+#' @param x A \code{dfdr_tbl}.
+#' @param ... Passed to the next print method.
+#'
+#' @return
+#' Returns \code{x} invisibly (called for its printing side effect).
+#'
+#' @examples
+#' library(tibble)
+#'
+#' df <- tibble(
+#'   id = as.character(1:3),
+#'   run = "run1",
+#'   is_decoy = c(FALSE, TRUE, FALSE),
+#'   score = c(10, 9, 8),
+#'   q = c(0.01, 0.02, 0.03),
+#'   pep = c(0.01, NA, 0.03)
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy_q")
+#' x
+#'
 #' @export
 print.dfdr_tbl <- function(x, ...) {
   meta <- attr(x, "meta") %||% list()

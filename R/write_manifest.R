@@ -1,12 +1,44 @@
 #' Write a manifest file describing parameters, list metadata, and warnings
 #'
-#' Writes \code{manifest.json} if \pkg{jsonlite} is available, otherwise writes
-#' \code{manifest.txt}. This ties exported outputs to scope/unit/q-source settings.
+#' Writes a manifest alongside exported outputs to record key run parameters and
+#' per-list metadata (unit, scope, q-source, export ceiling, etc.). This helps
+#' tie diagnostic outputs to the exact inputs and settings used.
 #'
-#' @param diag Output of \code{\link{dfdr_run_all}}.
-#' @param out_dir Output directory.
-#' @param filename Base filename (default "manifest").
-#' @return Invisibly returns the path to the manifest file.
+#' If \pkg{jsonlite} is available (suggested dependency), the manifest is written
+#' as JSON (\code{*.json}); otherwise a human-readable plain text file
+#' (\code{*.txt}) is written.
+#'
+#' @param diag A list as returned by \code{\link{dfdr_run_all}}.
+#' @param out_dir Character scalar. Output directory (created if it does not exist).
+#' @param filename Character scalar. Base filename without extension (default \code{"manifest"}).
+#'
+#' @return
+#' The path to the manifest file, returned invisibly. The function is called for
+#' its side effect of writing a file to disk.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' # Create a minimal dfdr_run_all-like object to demonstrate manifest writing
+#' df <- tibble(
+#'   id = c("1","2","3"),
+#'   run = "run1",
+#'   is_decoy = c(FALSE, TRUE, FALSE),
+#'   score = c(10, 9, 8),
+#'   q = c(0.01, 0.02, 0.03),
+#'   pep = NA_real_
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+#'
+#' diag <- list(
+#'   objects = list(toy = x),
+#'   params = list(alpha_main = 0.01),
+#'   warnings = character()
+#' )
+#'
+#' out_dir <- tempdir()
+#' dfdr_write_manifest(diag, out_dir = out_dir, filename = "manifest_example")
+#'
 #' @export
 dfdr_write_manifest <- function(diag, out_dir, filename = "manifest") {
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)

@@ -1,13 +1,44 @@
 #' BH list elasticity (Jaccard) across alpha values
 #'
-#' Computes Jaccard overlap of BH discovery sets between alpha and (1+eps)*alpha.
+#' Computes the stability (elasticity) of Benjamini--Hochberg (BH) discovery sets
+#' under a multiplicative perturbation of the nominal FDR level. For each
+#' \code{alpha} in \code{alphas}, the function compares the BH discovery set at
+#' \code{alpha} to the discovery set at \code{(1+eps)*alpha} using the Jaccard
+#' index.
 #'
-#' @param x A dfdr_tbl with columns \code{id} and \code{p}.
-#' @param alphas Numeric vector of BH levels in (0,1).
-#' @param eps Relative perturbation (default 0.2).
+#' @param x A \code{dfdr_tbl} (or data frame) with columns \code{id} and \code{p}.
+#'   Only finite \code{p}-values are used.
+#' @param alphas Numeric vector of BH levels in \eqn{(0,1)}.
+#' @param eps Numeric scalar \eqn{\epsilon > 0}. Relative perturbation (default
+#'   0.2), i.e. compares \code{alpha} vs \code{(1+eps)*alpha}.
 #'
-#' @return Tibble with columns \code{alpha}, \code{alpha_perturbed}, \code{jaccard},
-#'   \code{R_alpha}, \code{R_alpha_perturbed}, and thresholds.
+#' @return
+#' A \link[tibble:tibble]{tibble} with one row per element of \code{alphas}. Columns include:
+#' \describe{
+#'   \item{alpha}{The nominal BH level.}
+#'   \item{alpha_perturbed}{The perturbed level \code{min((1+eps)*alpha, 1)}.}
+#'   \item{t_alpha}{BH rejection threshold at \code{alpha} (NA if no rejections).}
+#'   \item{t_alpha_perturbed}{BH rejection threshold at \code{alpha_perturbed} (NA if none).}
+#'   \item{R_alpha}{Number of discoveries at \code{alpha}.}
+#'   \item{R_alpha_perturbed}{Number of discoveries at \code{alpha_perturbed}.}
+#'   \item{jaccard}{Jaccard similarity between the two discovery ID sets.}
+#' }
+#' This output is intended to quantify how sensitive BH discoveries are to small
+#' changes in the chosen FDR level.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 5000
+#' x <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   # mixture: mostly null p-values + a small enriched component
+#'   p = c(stats::runif(4500), stats::rbeta(500, 0.3, 1))
+#' )
+#'
+#' dfdr_bh_elasticity(x, alphas = c(1e-3, 5e-3, 1e-2, 2e-2), eps = 0.2)
+#'
 #' @export
 dfdr_bh_elasticity <- function(x,
                                alphas = c(1e-04, 5e-04, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05),
@@ -52,12 +83,34 @@ dfdr_bh_elasticity <- function(x,
   dplyr::bind_rows(out)
 }
 
+
 #' Plot BH elasticity (Jaccard) vs alpha
 #'
-#' @param el_tbl Output of \code{\link{dfdr_bh_elasticity}}.
-#' @param xlab X-axis label.
-#' @param title Plot title.
-#' @return A ggplot object.
+#' Convenience plotting function for the output of \code{\link{dfdr_bh_elasticity}}.
+#' The x-axis is \code{log10(alpha)} and the y-axis is the Jaccard overlap between
+#' BH discovery sets at \code{alpha} and \code{(1+eps)*alpha}.
+#'
+#' @param el_tbl A tibble as returned by \code{\link{dfdr_bh_elasticity}}.
+#' @param xlab Character. X-axis label.
+#' @param title Character. Plot title.
+#'
+#' @return
+#' A \link[ggplot2:ggplot]{ggplot} object.
+#'
+#' @examples
+#' library(tibble)
+#'
+#' set.seed(1)
+#' n <- 2000
+#' x <- tibble(
+#'   id = as.character(seq_len(n)),
+#'   p = c(stats::runif(1800), stats::rbeta(200, 0.3, 1))
+#' )
+#'
+#' el <- dfdr_bh_elasticity(x, alphas = c(1e-3, 5e-3, 1e-2, 2e-2), eps = 0.2)
+#' p <- dfdr_plot_bh_elasticity(el)
+#' p
+#'
 #' @export
 dfdr_plot_bh_elasticity <- function(el_tbl,
                                     xlab = "alpha (log10)",
@@ -68,3 +121,4 @@ dfdr_plot_bh_elasticity <- function(el_tbl,
     ggplot2::labs(x = xlab, y = "Jaccard", title = title) +
     ggplot2::ylim(0, 1)
 }
+
