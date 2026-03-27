@@ -10,13 +10,30 @@ dfdr_plot_pep_reliability_tdc(
 )
 }
 \arguments{
-\item{rel_tbl}{Output of dfdr_pep_reliability_tdc()}
+\item{rel_tbl}{Output of \code{\link{dfdr_pep_reliability_tdc}}.}
 
-\item{title}{Title of the plot}
+\item{title}{Character. Plot title.}
 }
 \value{
-ggplot
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot target-focused PEP reliability (TDC-style)
+Visualises the output of \code{\link{dfdr_pep_reliability_tdc}} by plotting the
+estimated target error proxy \code{err_hat_target} against the mean predicted
+target PEP per bin. Point size reflects the number of targets per bin.
+}
+\examples{
+library(tibble)
+
+rel_tbl <- tibble(
+  bin = c("(0,0.1]", "(0.1,0.2]", "(0.2,0.3]"),
+  n_target = c(800, 500, 200),
+  n_decoy = c(20, 30, 40),
+  pep_mean_targets = c(0.05, 0.15, 0.25),
+  pep_mean_all = c(0.06, 0.17, 0.28),
+  err_hat_target = c(0.03, 0.06, 0.20),
+  pep_bin_mid = c(0.05, 0.15, 0.25)
+)
+dfdr_plot_pep_reliability_tdc(rel_tbl)
+
 }

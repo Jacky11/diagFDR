@@ -14,39 +14,34 @@ score_to_pvalue(
 )
 }
 \arguments{
-\item{score}{Numeric vector. Identification score(s). Higher-is-better is assumed for
-\code{method="rank"} and \code{method="decoy_ecdf"} (you can flip sign upstream if needed).}
+\item{score}{Numeric vector. Identification scores. Higher-is-better is assumed for
+\code{method = "rank"} and \code{method = "decoy_ecdf"} (flip sign upstream if needed).}
 
-\item{method}{Character scalar. One of:
+\item{method}{Character. Conversion method:
 \describe{
-\item{\code{"mascot"}}{Treat \code{score} as Mascot score: \eqn{S = -10\log_{10}(p)}.
-Returns \eqn{p = 10^{-S/10}}.}
-\item{\code{"neglog10p"}}{Generic \eqn{S = -10\log_{10}(p)}. Same transform as \code{"mascot"}.}
-\item{\code{"evalue"}}{Treat \code{score} as an E-value/expectation-like quantity.
-Returns \eqn{p = \min(1, \max(score, eps))}. This is a pseudo-p-value unless you have
-additional guarantees.}
-\item{\code{"rank"}}{Pseudo-p-values from score ranks:
-\eqn{p_i = \frac{\mathrm{rank}(-s_i)}{n+1}} (best score gets smallest p).
-This is monotone and in (0,1), but not a null p-value.}
-\item{\code{"decoy_ecdf"}}{Pseudo-p-values from empirical decoy null tail.
-Requires \code{is_decoy}. For each score \eqn{s}, returns
-\eqn{p(s) = P(S_{decoy} \ge s)} estimated from the decoy score ECDF (right-tail).
-This is the most defensible pseudo-p-value for arbitrary scores when decoys are reliable.}
+\item{\code{"mascot"}}{Treat \code{score} as Mascot score \eqn{S=-10\log_{10}(p)}; returns \eqn{p=10^{-S/10}}.}
+\item{\code{"neglog10p"}}{Generic \eqn{S=-10\log_{10}(p)}; same transform as \code{"mascot"}.}
+\item{\code{"evalue"}}{Treat \code{score} as an expectation/e-value-like quantity and return it as a p-like value.}
+\item{\code{"rank"}}{Rank-based pseudo-p-values \eqn{p_i=\mathrm{rank}(-s_i)/(n+1)}.}
+\item{\code{"decoy_ecdf"}}{Decoy-ECDF pseudo-p-values from the empirical right-tail of decoy scores;
+requires \code{is_decoy}.}
 }}
 
 \item{is_decoy}{Optional logical vector (same length as \code{score}). Required for
-\code{method="decoy_ecdf"}. TRUE=decoy, FALSE=target.}
+\code{method = "decoy_ecdf"}. TRUE=decoy, FALSE=target.}
 
-\item{eps}{Numeric scalar > 0. Lower bound to avoid exact 0. Default \code{.Machine$double.xmin}.}
+\item{eps}{Numeric scalar > 0. Lower bound to avoid exact 0 (default \code{.Machine$double.xmin}).}
 
-\item{clamp}{Logical. If TRUE (default), clamp output to \verb{[0,1]}.}
+\item{clamp}{Logical. If \code{TRUE} (default), clamp output to \code{[0,1]}.}
 
-\item{ties}{Character. How to handle ties for \code{method="rank"}. Passed to \code{rank()}.
-Default \code{"average"}.}
+\item{ties}{Character. Tie-handling for \code{method="rank"}; passed to \code{rank()}.}
 }
 \value{
-Numeric vector of p-values/pseudo-p-values (same length as \code{score}).
-Missing/non-finite scores yield \code{NA_real_}.
+A numeric vector of p-values/pseudo-p-values of the same length as \code{score}.
+Non-finite scores yield \code{NA_real_}. For \code{method="decoy_ecdf"}, returned
+values estimate the decoy right-tail probability \eqn{P(S_{decoy}\ge s)} (with a
+small +1 smoothing), which can be interpreted as a null-calibrated pseudo-p-value
+when decoys provide a good null sample.
 }
 \description{
 Converts identification scores to:
@@ -56,7 +51,26 @@ Converts identification scores to:
 }
 }
 \details{
-Pseudo-p-values are useful as inputs to calibration checks (e.g. CP4P) and for building
-common scales across tools, but they are not guaranteed to be valid null p-values unless
-the method is explicitly null-based (e.g. \code{method="decoy_ecdf"} with reliable decoys).
+Pseudo-p-values are useful as inputs to plausibility checks (e.g. calibration/ECDF diagnostics),
+but they are not guaranteed to be valid null p-values unless the method is explicitly null-based
+(e.g. \code{method = "decoy_ecdf"} with a reliable decoy set).
+}
+\examples{
+set.seed(1)
+score <- rnorm(10)
+
+# Mascot-like transformation: S = -10 log10(p)
+S <- c(10, 20, 30)
+score_to_pvalue(S, method = "mascot")
+
+# Rank-based pseudo-p-values (higher score => smaller p)
+score_to_pvalue(score, method = "rank")
+
+# Decoy-ECDF pseudo-p-values (requires decoys)
+n <- 200
+score2 <- c(rnorm(n, mean = 0), rnorm(n, mean = 1))  # targets shifted higher
+is_decoy <- c(rep(TRUE, n), rep(FALSE, n))
+p2 <- score_to_pvalue(score2, method = "decoy_ecdf", is_decoy = is_decoy)
+summary(p2)
+
 }

@@ -7,15 +7,32 @@
 read_spectronaut_efficient(path, minimal = TRUE, dec = ".")
 }
 \arguments{
-\item{path}{Path to Spectronaut TSV}
+\item{path}{Character scalar. Path to a Spectronaut TSV report.}
 
-\item{minimal}{If TRUE, read only essential columns for precursor-level diagnostics}
+\item{minimal}{Logical. If \code{TRUE} (default), reads only columns typically
+needed for precursor-level diagnostics; if \code{FALSE}, reads all columns.}
 
-\item{dec}{Decimal separator (use "," for European locales)}
+\item{dec}{Character scalar. Decimal separator (use \code{","} for some locales).}
 }
 \value{
-tibble
+A \link[tibble:tibble]{tibble} containing either the selected minimal columns
+(if \code{minimal=TRUE}) or all columns (if \code{minimal=FALSE}).
 }
 \description{
-For very large files, read only the columns needed for diagnostics.
+Convenience wrapper around \code{\link{read_spectronaut}}. For very large
+Spectronaut reports, reading only a minimal set of columns can substantially
+speed up I/O and reduce memory usage.
+}
+\examples{
+if (requireNamespace("data.table", quietly = TRUE)) {
+  tmp <- tempfile(fileext = ".tsv")
+  txt <- paste0(
+    "R.FileName\tR.Condition\tEG.PrecursorId\tEG.IsDecoy\tEG.Qvalue\tEG.PEP\tEG.Cscore\n",
+    "run1\tcondA\tP1\tFalse\t0.01\t0.02\t120\n",
+    "run1\tcondA\tP2\tTrue\tNaN\t0.90\t10\n"
+  )
+  writeLines(txt, tmp)
+  read_spectronaut_efficient(tmp, minimal = TRUE)
+}
+
 }

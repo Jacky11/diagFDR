@@ -7,13 +7,31 @@
 dfdr_plot_p_calibration(ecdf_tbl, title = "P-value calibration: ECDF(p) - u")
 }
 \arguments{
-\item{ecdf_tbl}{Output \code{$ecdf} from \code{\link{dfdr_p_calibration}}.}
+\item{ecdf_tbl}{A tibble, typically \code{out$ecdf} from \code{\link{dfdr_p_calibration}}.
+Must contain columns \code{stratum}, \code{u}, and \code{Fhat}.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot p-value calibration (ECDF minus uniform)
+Plots \eqn{\hat F(u) - u} against \eqn{u} using the \code{ecdf} component
+returned by \code{\link{dfdr_p_calibration}}. Values above zero indicate
+potential inflation (excess of small p-values) relative to uniform.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 2000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = sample(c("run1", "run2"), n, replace = TRUE),
+  p = c(stats::runif(1800), stats::rbeta(200, 0.3, 1))
+)
+cal <- dfdr_p_calibration(df, stratify = "run", min_n = 100)
+p <- dfdr_plot_p_calibration(cal$ecdf)
+p
+
 }

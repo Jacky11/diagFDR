@@ -13,21 +13,51 @@ dfdr_p_calibration(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl (or data.frame) containing columns \code{id} and \code{p}.}
+\item{x}{A \code{dfdr_tbl} (or data.frame) containing columns \code{id} and \code{p}.}
 
-\item{u_grid}{Numeric vector in (0,1]. Grid of u values for evaluating the ECDF.}
+\item{u_grid}{Numeric vector in \eqn{(0,1]}. Grid of \code{u} values for evaluating the ECDF.}
 
-\item{u_max}{Numeric in (0,1]. Upper bound of u used for inflation summaries (default 0.1).}
+\item{u_max}{Numeric scalar in \eqn{(0,1]}. Upper bound of \code{u} used for
+inflation summaries (default 0.1).}
 
-\item{stratify}{Optional character vector of column names used to stratify diagnostics.}
+\item{stratify}{Optional character vector of column names used to stratify
+diagnostics (e.g. \code{c("run")}).}
 
-\item{min_n}{Minimum number of finite p-values required per stratum.}
+\item{min_n}{Integer. Minimum number of finite p-values required per stratum.}
 }
 \value{
-A list with elements \code{ecdf} (tibble) and \code{summary} (tibble).
+A list with components:
+\describe{
+\item{ecdf}{A \link[tibble:tibble]{tibble} with columns \code{stratum},
+\code{u}, \code{Fhat}, and \code{n}. There is one row per \code{u} value per
+stratum.}
+\item{summary}{A tibble with one row per stratum, including \code{n} (number
+of finite p-values), \code{max_inflation} (maximum of \code{Fhat(u)-u} for
+\code{u <= u_max}), and \code{auc_inflation} (area under the positive part of
+\code{Fhat(u)-u} on \eqn{[0,u_{\max}]}, normalised by \code{u_max}). Strata
+with \code{n < min_n} are reported with \code{NA} metrics and a \code{note}.}
+}
 }
 \description{
-Computes empirical CDF values Fhat(u) for a grid of u and reports
-inflation metrics such as max(Fhat(u) - u) in a decision-relevant region.
-Intended as a plausibility diagnostic for (pseudo-)p-values.
+Computes the empirical CDF \eqn{\hat F(u) = P(p \le u)} on a grid of \code{u}
+values and summarises departures from uniformity in a decision-relevant region
+\eqn{u \le u_{\max}}. Intended as a plausibility diagnostic for (pseudo-)p-values
+(e.g. under the null, \eqn{\hat F(u) \approx u}).
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = sample(c("run1", "run2"), n, replace = TRUE),
+  # mostly uniform p-values + a small enriched component
+  p = c(stats::runif(4500), stats::rbeta(500, 0.3, 1))
+)
+
+out <- dfdr_p_calibration(df, stratify = "run", u_max = 0.1, min_n = 200)
+head(out$ecdf)
+out$summary
+
 }

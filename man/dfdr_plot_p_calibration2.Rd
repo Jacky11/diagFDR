@@ -14,20 +14,51 @@ dfdr_plot_p_calibration2(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl (or data.frame) containing columns id, is_decoy, p.}
+\item{x}{A \code{dfdr_tbl} (or data.frame) containing columns \code{id},
+\code{is_decoy}, and \code{p}.}
 
-\item{sel}{Subset: "all", "decoy", or "target".}
+\item{sel}{Character. Subset to use: \code{"all"}, \code{"decoy"}, or \code{"target"}.}
 
-\item{nbins, pz}{Passed to cp4p::estim.pi0().}
+\item{nbins}{Integer. Passed to \code{cp4p::estim.pi0()}.}
 
-\item{step}{Grid step for abs = 1-p.}
+\item{pz}{Numeric. Passed to \code{cp4p::estim.pi0()}.}
 
-\item{return_data}{If TRUE, return plot + computed data.}
+\item{step}{Numeric. Grid step size for \code{abs = 1 - p}.}
+
+\item{return_data}{Logical. If \code{TRUE}, return both the plot and the
+computed data used to build it.}
 }
 \value{
-ggplot (or list if return_data=TRUE)
+If \code{return_data = FALSE} (default), returns a
+\link[ggplot2:ggplot]{ggplot} object.
+
+If \code{return_data = TRUE}, returns a list with components:
+\describe{
+\item{plot}{A ggplot object.}
+\item{pi0}{Named numeric vector of \eqn{\pi_0} estimates (one per method).}
+\item{data}{A list with \code{main} (ECDF data) and \code{ref} (reference
+curve data).}
+}
 }
 \description{
-Plots ECDF of (1-p) against reference curves derived from cp4p::estim.pi0()
-using multiple pi0 estimation methods.
+Plots the ECDF of \eqn{1-p} and overlays reference curves derived from
+\code{cp4p::estim.pi0()} using multiple \eqn{\pi_0} estimation methods.
+This provides a visual plausibility check for p-value calibration.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 2000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.9, 0.1)),
+  p = c(stats::runif(1800), stats::rbeta(200, 0.3, 1))
+)
+
+if (requireNamespace("cp4p", quietly = TRUE)) {
+  g <- dfdr_plot_p_calibration2(df, sel = "all", return_data = FALSE)
+  g
+}
+
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_spectronaut_normalEG.R
 \name{spectronaut_runxprecursor}
 \alias{spectronaut_runxprecursor}
-\title{Spectronaut -> runxprecursor universe (deduplicated within run by EG.PrecursorId)}
+\title{Spectronaut -> run-by-precursor universe (deduplicated within run by \code{EG.PrecursorId})}
 \usage{
 spectronaut_runxprecursor(
   rep,
@@ -19,52 +19,71 @@ spectronaut_runxprecursor(
 )
 }
 \arguments{
-\item{rep}{Spectronaut report tibble (from read_spectronaut or read_spectronaut_efficient)}
+\item{rep}{Spectronaut report tibble (e.g. returned by \code{\link{read_spectronaut}}
+or \code{\link{read_spectronaut_efficient}}).}
 
-\item{q_col}{q-value column name (default "EG.Qvalue" for run-wise FDR control)}
+\item{q_col}{Character. q-value column name (default \code{"EG.Qvalue"} for run-wise control).}
 
-\item{run_col}{optional; auto-detect if NULL (looks for R.FileName or R.Condition)}
+\item{run_col}{Optional character. Run column name; if \code{NULL}, attempts to
+detect one of \code{"R.FileName"} or \code{"R.Condition"}.}
 
-\item{pep_col}{optional PEP column (default "EG.PEP")}
+\item{pep_col}{Optional character. PEP column name (default \code{"EG.PEP"}).}
 
-\item{score_col}{optional score column (default "EG.Cscore")}
+\item{score_col}{Optional character. Score column name (default \code{"EG.Cscore"}).}
 
-\item{q_max_export}{export ceiling (default 1.0)}
+\item{q_max_export}{Numeric. Export ceiling for q-values (default 1.0), stored in metadata.}
 
-\item{recompute_q}{If TRUE and decoys lack valid q-values, recompute from score per run.
-This is typically necessary as Spectronaut exports NaN q-values for decoys.}
+\item{recompute_q}{Logical. If \code{TRUE} (default) and decoys lack finite q-values,
+recompute q-values from \code{score_col} per run.}
 
-\item{id_mode}{"id" (default) sets id=EG.PrecursorId and keeps run separate;
-"runxid" sets id = run||precursor for global uniqueness}
+\item{id_mode}{Character. \code{"id"} (default) uses \code{id = EG.PrecursorId} and keeps
+\code{run} separate; \code{"runxid"} uses \code{id = "run||precursor"} for global uniqueness.}
 
-\item{unit}{Unit metadata (default "runxprecursor")}
+\item{unit}{Character. Unit metadata stored in the returned object.}
 
-\item{scope}{Scope metadata (default "runwise")}
+\item{scope}{Character. Scope metadata stored in the returned object.}
 
-\item{q_source}{Source label for metadata}
+\item{q_source}{Character. Source label stored in metadata.}
 }
 \value{
-dfdr_tbl with run column filled, suitable for run-wise FDR diagnostics
+A \code{dfdr_tbl} (tibble subclass) with one row per \code{run} \eqn{\times}
+\code{precursor}. The returned table contains the standard columns required by
+\code{diagFDR}: \code{id}, \code{is_decoy}, \code{q}, \code{pep}, \code{run}, \code{score}.
+Metadata (including whether q-values were recomputed) are stored in \code{attr(x, "meta")}.
 }
 \description{
-Spectronaut -> runxprecursor universe (deduplicated within run by EG.PrecursorId)
+Constructs a run-wise precursor universe from a Spectronaut report. The output
+is suitable for run-wise FDR diagnostics because each row corresponds to a
+\code{run} \eqn{\times} \code{precursor} hypothesis.
 }
 \details{
-When Spectronaut exports decoys with NaN q-values (typical behavior), this function
-recomputes q-values from scores per run using target-decoy competition. This respects
-the statistical structure where each run×precursor is an independent hypothesis and
-avoids pooling scores that may not be on comparable scales across runs.
+If Spectronaut exports \code{NaN} q-values for decoys (common), the function can
+optionally recompute q-values from scores per run using target-decoy competition.
+
+When Spectronaut exports decoys with \code{NaN} q-values, recomputing q-values
+from scores is performed \emph{per run} to respect the run-wise hypothesis structure
+and to avoid pooling scores across runs that may not be comparable.
 }
 \examples{
-\dontrun{
-# Read Spectronaut report (use dec="," for European exports)
-rep <- read_spectronaut_efficient("spectronaut_report.tsv", dec = ",")
+library(tibble)
 
-# Create run-wise universe for FDR diagnostics
-univ <- spectronaut_runxprecursor(rep, q_col = "EG.Qvalue")
+# Minimal toy Spectronaut-like report
+rep <- tibble(
+  R.FileName = c("run1","run1","run1","run2","run2","run2"),
+  EG.PrecursorId = c("P1","P2","P3","P1","P2","P4"),
+  EG.IsDecoy = c("False","True","False","False","True","False"),
+  EG.Qvalue = c(0.01, NaN, 0.02, 0.03, NaN, 0.04),
+  EG.PEP = c(0.02, 0.9, 0.05, 0.06, 0.95, 0.08),
+  EG.Cscore = c(120, 10, 80, 100, 5, 60)
+)
 
-# Run diagnostics
-results <- dfdr_run_all(list(runwise = univ), derive_p = FALSE)
-}
+x <- spectronaut_runxprecursor(
+  rep,
+  q_col = "EG.Qvalue",
+  run_col = "R.FileName",
+  recompute_q = TRUE,
+  id_mode = "runxid"
+)
+x
 
 }

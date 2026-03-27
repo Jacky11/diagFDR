@@ -11,16 +11,46 @@ dfdr_bh_elasticity(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl with columns \code{id} and \code{p}.}
+\item{x}{A \code{dfdr_tbl} (or data frame) with columns \code{id} and \code{p}.
+Only finite \code{p}-values are used.}
 
-\item{alphas}{Numeric vector of BH levels in (0,1).}
+\item{alphas}{Numeric vector of BH levels in \eqn{(0,1)}.}
 
-\item{eps}{Relative perturbation (default 0.2).}
+\item{eps}{Numeric scalar \eqn{\epsilon > 0}. Relative perturbation (default
+0.2), i.e. compares \code{alpha} vs \code{(1+eps)*alpha}.}
 }
 \value{
-Tibble with columns \code{alpha}, \code{alpha_perturbed}, \code{jaccard},
-\code{R_alpha}, \code{R_alpha_perturbed}, and thresholds.
+A \link[tibble:tibble]{tibble} with one row per element of \code{alphas}. Columns include:
+\describe{
+\item{alpha}{The nominal BH level.}
+\item{alpha_perturbed}{The perturbed level \code{min((1+eps)*alpha, 1)}.}
+\item{t_alpha}{BH rejection threshold at \code{alpha} (NA if no rejections).}
+\item{t_alpha_perturbed}{BH rejection threshold at \code{alpha_perturbed} (NA if none).}
+\item{R_alpha}{Number of discoveries at \code{alpha}.}
+\item{R_alpha_perturbed}{Number of discoveries at \code{alpha_perturbed}.}
+\item{jaccard}{Jaccard similarity between the two discovery ID sets.}
+}
+This output is intended to quantify how sensitive BH discoveries are to small
+changes in the chosen FDR level.
 }
 \description{
-Computes Jaccard overlap of BH discovery sets between alpha and (1+eps)*alpha.
+Computes the stability (elasticity) of Benjamini--Hochberg (BH) discovery sets
+under a multiplicative perturbation of the nominal FDR level. For each
+\code{alpha} in \code{alphas}, the function compares the BH discovery set at
+\code{alpha} to the discovery set at \code{(1+eps)*alpha} using the Jaccard
+index.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+x <- tibble(
+  id = as.character(seq_len(n)),
+  # mixture: mostly null p-values + a small enriched component
+  p = c(stats::runif(4500), stats::rbeta(500, 0.3, 1))
+)
+
+dfdr_bh_elasticity(x, alphas = c(1e-3, 5e-3, 1e-2, 2e-2), eps = 0.2)
+
 }

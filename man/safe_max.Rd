@@ -2,18 +2,18 @@
 % Please edit documentation in R/utils.R
 \name{safe_max}
 \alias{safe_max}
-\title{Safe maximum that handles NA values}
+\title{Internal: safe maximum (NA-robust)}
 \usage{
 safe_max(x)
 }
 \arguments{
-\item{x}{Numeric vector}
+\item{x}{Numeric vector.}
 }
 \value{
-Maximum value or NA_real_
+Numeric scalar maximum, or \code{NA_real_}.
 }
 \description{
-Returns the maximum of x, with NA values removed.
-If all values are NA, returns NA_real_.
+Returns \code{max(x, na.rm = TRUE)}. If all values are \code{NA}, returns
+\code{NA_real_}.
 }
 \keyword{internal}

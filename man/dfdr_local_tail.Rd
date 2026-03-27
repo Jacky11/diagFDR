@@ -14,17 +14,51 @@ dfdr_local_tail(
 \arguments{
 \item{x}{An \code{dfdr_tbl}.}
 
-\item{alphas}{Numeric vector of thresholds.}
+\item{alphas}{Numeric vector of FDR thresholds in \eqn{(0,1]}.}
 
-\item{win_rel}{Relative window width \eqn{\rho} (default 0.2).}
+\item{win_rel}{Numeric. Relative window width \eqn{\rho} (default 0.2).}
 
-\item{truncation}{How to handle cases where \eqn{\alpha + \rho\alpha} exceeds the
-available q-value export range. One of \code{"warn_drop"}, \code{"drop"}, \code{"cap"}.}
+\item{truncation}{Character. How to handle cases where
+\eqn{\alpha + \rho\alpha} exceeds the available q-value export range
+(i.e. \code{q_max_export}). One of \code{"warn_drop"}, \code{"drop"},
+\code{"cap"}.}
 }
 \value{
-A tibble with \code{D_alpha_win} and related columns for each \code{alpha}.
+A \link[tibble:tibble]{tibble} with one row per \code{alpha}. Columns include:
+\describe{
+\item{alpha}{The threshold.}
+\item{delta}{The effective window width used (\eqn{\rho\alpha} or capped).}
+\item{n_win}{Number of entries with \code{q} in the window.}
+\item{D_alpha_win}{Number of decoys in the window.}
+\item{decoy_frac_win}{Decoy fraction in the window (\code{D_alpha_win/n_win}).}
+\item{upper_used}{Upper endpoint actually used for the window.}
+\item{truncated}{Logical indicating whether the requested window was truncated
+(or dropped) due to export limits.}
+}
+This table is used to assess boundary support: very small \code{n_win} or
+\code{D_alpha_win} indicates an unstable/poorly-supported cutoff.
 }
 \description{
-Counts decoys in the interval \eqn{(\alpha, \alpha + \rho \alpha]} where \eqn{\rho}
-is \code{win_rel}. This approximates how well supported the decision boundary is.
+Counts the number of observations (and decoys) in a right-neighborhood of each
+threshold \eqn{\alpha}, defined as \eqn{(\alpha,\, \alpha + \rho\alpha]} where
+\eqn{\rho} is \code{win_rel}. This approximates how well supported the decision
+boundary is by decoys in the immediate tail.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  pep = NA_real_
+)
+df$q <- diagFDR:::tdc_qvalues(df$score, df$is_decoy, add_decoy = 1L)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy_tdc")
+
+dfdr_local_tail(x, alphas = c(1e-3, 5e-3, 1e-2), win_rel = 0.2, truncation = "cap")
+
 }

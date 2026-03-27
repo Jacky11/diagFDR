@@ -7,13 +7,32 @@
 dfdr_plot_score_distributions(x, title = "Target vs Decoy Score Distributions")
 }
 \arguments{
-\item{x}{A dfdr_tbl object}
+\item{x}{A \code{dfdr_tbl}.}
 
-\item{title}{Plot title}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object with target distribution in blue and decoy distribution in red
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot target vs decoy score distributions
+Plots density distributions of scores (if available) or q-values (fallback) for
+targets vs decoys. This provides a quick sanity check that decoys are shifted
+toward lower scores (or higher q-values).
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 4000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  q = pmin(1, rank(-score) / n),
+  pep = NA_real_
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+dfdr_plot_score_distributions(x)
+
 }

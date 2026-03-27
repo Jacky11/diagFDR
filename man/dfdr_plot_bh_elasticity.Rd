@@ -11,15 +11,32 @@ dfdr_plot_bh_elasticity(
 )
 }
 \arguments{
-\item{el_tbl}{Output of \code{\link{dfdr_bh_elasticity}}.}
+\item{el_tbl}{A tibble as returned by \code{\link{dfdr_bh_elasticity}}.}
 
-\item{xlab}{X-axis label.}
+\item{xlab}{Character. X-axis label.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot BH elasticity (Jaccard) vs alpha
+Convenience plotting function for the output of \code{\link{dfdr_bh_elasticity}}.
+The x-axis is \code{log10(alpha)} and the y-axis is the Jaccard overlap between
+BH discovery sets at \code{alpha} and \code{(1+eps)*alpha}.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 2000
+x <- tibble(
+  id = as.character(seq_len(n)),
+  p = c(stats::runif(1800), stats::rbeta(200, 0.3, 1))
+)
+
+el <- dfdr_bh_elasticity(x, alphas = c(1e-3, 5e-3, 1e-2, 2e-2), eps = 0.2)
+p <- dfdr_plot_bh_elasticity(el)
+p
+
 }

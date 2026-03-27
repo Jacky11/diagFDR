@@ -2,7 +2,7 @@
 % Please edit documentation in R/io_diann.R
 \name{diann_global_precursor}
 \alias{diann_global_precursor}
-\title{DIA-NN -> global precursor universe (deduplicated by Precursor.Id)}
+\title{DIA-NN -> global precursor universe (deduplicated by \code{Precursor.Id})}
 \usage{
 diann_global_precursor(
   rep,
@@ -16,25 +16,44 @@ diann_global_precursor(
 )
 }
 \arguments{
-\item{rep}{DIA-NN report tibble (from read_diann_parquet)}
+\item{rep}{A DIA-NN report tibble (e.g. returned by \code{\link{read_diann_parquet}}).}
 
-\item{q_col}{Column name for q-values (default "Q.Value" or "Global.Q.Value")}
+\item{q_col}{Character. Column name for q-values (default \code{"Q.Value"}).}
 
-\item{pep_col}{Optional PEP column name (default "PEP" if present)}
+\item{pep_col}{Optional character. PEP column name (default \code{"PEP"} if present).}
 
-\item{score_col}{Optional score column name (if you want to store it; otherwise NA)}
+\item{score_col}{Optional character. Score column name to retain; if missing, \code{score} is \code{NA}.}
 
-\item{q_max_export}{Optional export ceiling used in DIA-NN export (e.g. 0.5)}
+\item{q_max_export}{Optional numeric export ceiling used in DIA-NN export (e.g. 0.5).}
 
-\item{unit}{unit metadata}
+\item{unit}{Character. Unit metadata stored in the returned object.}
 
-\item{scope}{scope metadata}
+\item{scope}{Character. Scope metadata stored in the returned object.}
 
-\item{q_source}{q_source metadata}
+\item{q_source}{Character. Label stored in metadata describing the q-value source.}
 }
 \value{
-dfdr_tbl
+A \code{dfdr_tbl} (tibble subclass) with one row per precursor and required
+columns \code{id}, \code{is_decoy}, \code{q}, \code{pep}, \code{run}, \code{score}.
+Metadata are stored in \code{attr(x, "meta")}.
 }
 \description{
-Uses min q per precursor (safe_min), and marks Decoy TRUE if any row in group is decoy.
+Constructs a precursor-level universe by aggregating a DIA-NN report table to
+one row per \code{Precursor.Id}. For each precursor, the minimum q-value is
+used (via \code{safe_min}) and \code{is_decoy} is set to \code{TRUE} if any row
+in the group is a decoy.
+}
+\examples{
+library(tibble)
+
+rep <- tibble(
+  Precursor.Id = c("P1", "P1", "P2"),
+  Decoy = c(0L, 0L, 1L),
+  Q.Value = c(0.01, 0.02, 0.03),
+  PEP = c(0.02, 0.01, 0.9)
+)
+
+x <- diann_global_precursor(rep, q_col = "Q.Value", q_max_export = 0.5)
+x
+
 }

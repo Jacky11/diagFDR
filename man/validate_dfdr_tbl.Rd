@@ -2,11 +2,25 @@
 % Please edit documentation in R/class_dfdr_tbl.R
 \name{validate_dfdr_tbl}
 \alias{validate_dfdr_tbl}
-\title{Validate a dfdr_tbl}
+\title{Validate a \code{dfdr_tbl}}
 \usage{
 validate_dfdr_tbl(x)
 }
+\arguments{
+\item{x}{A data frame (typically a tibble) to validate.}
+}
+\value{
+The input \code{x} invisibly (unchanged) if validation succeeds. Otherwise an
+error is raised describing the first detected problem.
+}
 \description{
-Validate a dfdr_tbl
+Performs structural checks required by \code{diagFDR} diagnostics. This
+function is intended for internal use and is called by constructors and
+downstream diagnostics.
+}
+\details{
+The required columns are \code{id}, \code{is_decoy}, \code{q}, \code{pep},
+\code{run}, and \code{score}. If a \code{p} column is present, it is also
+validated.
 }
 \keyword{internal}

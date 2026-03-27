@@ -2,18 +2,42 @@
 % Please edit documentation in R/plots.R
 \name{dfdr_plot_scope_disagreement_matrix}
 \alias{dfdr_plot_scope_disagreement_matrix}
-\title{Plot scope disagreement as Jaccard overlap heatmap}
+\title{Plot scope disagreement as a Jaccard overlap heatmap}
 \usage{
 dfdr_plot_scope_disagreement_matrix(xs, alpha = 0.01)
 }
 \arguments{
-\item{xs}{Named list of dfdr_tbl objects}
+\item{xs}{Named list of \code{dfdr_tbl} objects.}
 
-\item{alpha}{Threshold for accepted targets}
+\item{alpha}{Numeric threshold used to define accepted targets (\code{q <= alpha}).}
 }
 \value{
-A ggplot heatmap
+A \link[ggplot2:ggplot]{ggplot} object (heatmap).
 }
 \description{
-Plot scope disagreement as Jaccard overlap heatmap
+Computes accepted target ID sets for each list at a fixed \code{alpha} and
+visualises pairwise Jaccard overlaps as a heatmap. IDs are compared at the
+"base" level by stripping any \code{"run||"} prefix.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 2000
+
+make_x <- function(label) {
+  df <- tibble(
+    id = paste0("run1||", as.character(seq_len(n))),
+    run = "run1",
+    is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+    score = rnorm(n),
+    q = stats::runif(n, 0, 0.05),
+    pep = NA_real_
+  )
+  as_dfdr_tbl(df, unit = "psm", scope = label, q_source = "toy")
+}
+
+xs <- list(A = make_x("A"), B = make_x("B"), C = make_x("C"))
+dfdr_plot_scope_disagreement_matrix(xs, alpha = 0.01)
+
 }

@@ -2,16 +2,29 @@
 % Please edit documentation in R/io_diann.R
 \name{read_diann_parquet}
 \alias{read_diann_parquet}
-\title{Read a DIA-NN report.parquet}
+\title{Read a DIA-NN \code{report.parquet}}
 \usage{
 read_diann_parquet(path)
 }
 \arguments{
-\item{path}{Path to report.parquet}
+\item{path}{Character scalar. Path to a DIA-NN \code{report.parquet} file.}
 }
 \value{
-tibble with DIA-NN columns
+A \link[tibble:tibble]{tibble} containing the columns present in the DIA-NN
+parquet report (column names depend on DIA-NN export settings).
 }
 \description{
-Requires the 'arrow' package (in Suggests).
+Reads a DIA-NN \code{report.parquet} file using the \pkg{arrow} package
+(suggested dependency) and returns it as a tibble.
+}
+\examples{
+if (requireNamespace("arrow", quietly = TRUE)) {
+  # Create a tiny parquet file and read it back
+  tmp <- tempfile(fileext = ".parquet")
+  df <- data.frame(Precursor.Id = c("P1", "P2"), Q.Value = c(0.01, 0.02))
+  arrow::write_parquet(df, tmp)
+  out <- read_diann_parquet(tmp)
+  out
+}
+
 }

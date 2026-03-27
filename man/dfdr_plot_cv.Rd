@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{dfdr_plot_cv}
 \alias{dfdr_plot_cv}
-\title{Plot CV_hat versus alpha}
+\title{Plot \code{CV_hat} versus \code{alpha}}
 \usage{
 dfdr_plot_cv(
   stab_tbl,
@@ -11,16 +11,28 @@ dfdr_plot_cv(
 )
 }
 \arguments{
-\item{stab_tbl}{A stability table (e.g. from \code{\link{dfdr_curve_stability}}) with
-columns \code{alpha}, \code{CV_hat}, and \code{list}.}
+\item{stab_tbl}{A stability table (e.g. from \code{\link{dfdr_curve_stability}})
+with columns \code{alpha}, \code{CV_hat}, and \code{list}.}
 
-\item{xlab}{X-axis label.}
+\item{xlab}{Character. X-axis label.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot CV_hat versus alpha
+Plots a stability proxy (\code{CV_hat}) against the threshold \code{alpha} for
+one or more lists.
+}
+\examples{
+library(tibble)
+
+stab_tbl <- tibble(
+  list = rep(c("A", "B"), each = 4),
+  alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+  CV_hat = c(0.30, 0.22, 0.15, 0.12, 0.40, 0.28, 0.20, 0.18)
+)
+dfdr_plot_cv(stab_tbl)
+
 }

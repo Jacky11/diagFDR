@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{dfdr_plot_elasticity}
 \alias{dfdr_plot_elasticity}
-\title{Plot threshold elasticity (Jaccard) versus alpha}
+\title{Plot threshold elasticity (Jaccard) versus \code{alpha}}
 \usage{
 dfdr_plot_elasticity(
   el_tbl,
@@ -11,16 +11,29 @@ dfdr_plot_elasticity(
 )
 }
 \arguments{
-\item{el_tbl}{An elasticity table (e.g. from \code{\link[=dfdr_elasticity]{dfdr_elasticity()}}) containing
-columns \code{alpha}, \code{jaccard}, and \code{list}.}
+\item{el_tbl}{An elasticity table (e.g. from \code{\link{dfdr_elasticity}})
+containing columns \code{alpha}, \code{jaccard}, and \code{list}.}
 
-\item{xlab}{X-axis label.}
+\item{xlab}{Character. X-axis label.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot threshold elasticity (Jaccard) versus alpha
+Plots Jaccard overlap values (as returned by \code{\link{dfdr_elasticity}})
+against \code{alpha}. Lower overlap indicates greater sensitivity of the
+accepted set to small changes of the threshold.
+}
+\examples{
+library(tibble)
+
+el_tbl <- tibble(
+  list = rep(c("A", "B"), each = 4),
+  alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+  jaccard = c(0.95, 0.93, 0.90, 0.88, 0.92, 0.90, 0.86, 0.82)
+)
+dfdr_plot_elasticity(el_tbl)
+
 }

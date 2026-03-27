@@ -7,14 +7,28 @@
 dfdr_plot_pep_reliability(bins_tbl, title = "PEP reliability")
 }
 \arguments{
-\item{bins_tbl}{A PEP reliability bins table (e.g. the \verb{$bins} output of
-\code{\link[=dfdr_pep_reliability]{dfdr_pep_reliability()}}) containing columns \code{pep_mean}, \code{decoy_rate}, and \code{n}.}
+\item{bins_tbl}{A PEP reliability bins table (e.g. \code{out$bins} from
+\code{\link{dfdr_pep_reliability}}) containing columns \code{pep_mean},
+\code{decoy_rate}, and \code{n}.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot PEP reliability
+Visualises PEP reliability by plotting the observed decoy fraction against the
+mean predicted PEP in each bin (from \code{\link{dfdr_pep_reliability}}). Point
+size reflects bin counts.
+}
+\examples{
+library(tibble)
+
+bins_tbl <- tibble(
+  pep_mean = c(0.05, 0.15, 0.25, 0.35),
+  decoy_rate = c(0.06, 0.14, 0.30, 0.40),
+  n = c(500, 400, 250, 120)
+)
+dfdr_plot_pep_reliability(bins_tbl)
+
 }

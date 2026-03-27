@@ -9,11 +9,37 @@ dfdr_run_jaccard(x, alpha = 0.01)
 \arguments{
 \item{x}{An \code{dfdr_tbl} with a non-missing \code{run} column.}
 
-\item{alpha}{Threshold used for acceptance.}
+\item{alpha}{Numeric FDR threshold in \eqn{(0,1]} used to define accepted
+targets (\code{q <= alpha}).}
 }
 \value{
-A tibble with columns \code{run1}, \code{run2}, \code{jaccard}.
+A \link[tibble:tibble]{tibble} with one row per run pair and columns:
+\describe{
+\item{run1}{Name/identifier of the first run.}
+\item{run2}{Name/identifier of the second run.}
+\item{jaccard}{Jaccard similarity between accepted target ID sets.}
+}
 }
 \description{
-Computes a run-by-run Jaccard similarity matrix based on accepted target IDs.
+Computes pairwise Jaccard similarity between runs based on accepted target IDs
+at a fixed threshold \code{alpha}. This can reveal run-to-run disagreement or
+heterogeneity in identifications.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 8000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = sample(c("runA", "runB", "runC"), n, replace = TRUE),
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  pep = NA_real_
+)
+df$q <- diagFDR:::tdc_qvalues(df$score, df$is_decoy, add_decoy = 1L)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy_tdc")
+
+dfdr_run_jaccard(x, alpha = 0.01)
+
 }

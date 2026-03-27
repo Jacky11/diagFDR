@@ -7,13 +7,35 @@
 read_mokapot_psms(target_path, decoy_path)
 }
 \arguments{
-\item{target_path}{path to *.mokapot.psms.txt (targets)}
+\item{target_path}{Character scalar. Path to the mokapot target PSM table
+(e.g. \code{*.mokapot.psms.txt}).}
 
-\item{decoy_path}{path to *.mokapot.decoy.psms.txt (decoys)}
+\item{decoy_path}{Character scalar. Path to the mokapot decoy PSM table
+(e.g. \code{*.mokapot.decoy.psms.txt}).}
 }
 \value{
-tibble combined
+A \link[tibble:tibble]{tibble} containing all rows from the target and decoy
+tables. Column names and content are determined by mokapot.
 }
 \description{
-Read mokapot PSM text outputs (targets + decoys) and combine
+Reads the mokapot PSM output tables for targets and decoys (typically
+\code{*.mokapot.psms.txt} and \code{*.mokapot.decoy.psms.txt}) and concatenates
+them into a single table.
+}
+\examples{
+if (requireNamespace("readr", quietly = TRUE)) {
+  # Create tiny example mokapot-like target/decoy tables and read them back
+  tf1 <- tempfile(fileext = ".txt")
+  tf2 <- tempfile(fileext = ".txt")
+  txt1 <- "run\tspectrum_id\tmokapot score\tmokapot q-value\tmokapot PEP
+  \tis_target\nr1\t1\t2.0\t0.01\t0.02\tTRUE\n"
+  txt2 <- "run\tspectrum_id\tmokapot score\tmokapot q-value\tmokapot PEP
+  \tis_target\nr1\t1\t1.0\t0.50\t0.60\tFALSE\n"
+  writeLines(txt1, tf1)
+  writeLines(txt2, tf2)
+
+  raw <- read_mokapot_psms(tf1, tf2)
+  raw
+}
+
 }

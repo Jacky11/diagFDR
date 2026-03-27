@@ -7,16 +7,47 @@
 dfdr_write_manifest(diag, out_dir, filename = "manifest")
 }
 \arguments{
-\item{diag}{Output of \code{\link{dfdr_run_all}}.}
+\item{diag}{A list as returned by \code{\link{dfdr_run_all}}.}
 
-\item{out_dir}{Output directory.}
+\item{out_dir}{Character scalar. Output directory (created if it does not exist).}
 
-\item{filename}{Base filename (default "manifest").}
+\item{filename}{Character scalar. Base filename without extension (default \code{"manifest"}).}
 }
 \value{
-Invisibly returns the path to the manifest file.
+The path to the manifest file, returned invisibly. The function is called for
+its side effect of writing a file to disk.
 }
 \description{
-Writes \code{manifest.json} if \pkg{jsonlite} is available, otherwise writes
-\code{manifest.txt}. This ties exported outputs to scope/unit/q-source settings.
+Writes a manifest alongside exported outputs to record key run parameters and
+per-list metadata (unit, scope, q-source, export ceiling, etc.). This helps
+tie diagnostic outputs to the exact inputs and settings used.
+}
+\details{
+If \pkg{jsonlite} is available (suggested dependency), the manifest is written
+as JSON (\code{*.json}); otherwise a human-readable plain text file
+(\code{*.txt}) is written.
+}
+\examples{
+library(tibble)
+
+# Create a minimal dfdr_run_all-like object to demonstrate manifest writing
+df <- tibble(
+  id = c("1","2","3"),
+  run = "run1",
+  is_decoy = c(FALSE, TRUE, FALSE),
+  score = c(10, 9, 8),
+  q = c(0.01, 0.02, 0.03),
+  pep = NA_real_
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+
+diag <- list(
+  objects = list(toy = x),
+  params = list(alpha_main = 0.01),
+  warnings = character()
+)
+
+out_dir <- tempdir()
+dfdr_write_manifest(diag, out_dir = out_dir, filename = "manifest_example")
+
 }

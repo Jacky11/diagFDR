@@ -19,29 +19,59 @@ mokapot_competed_universe(
 )
 }
 \arguments{
-\item{raw}{combined mokapot table (from read_mokapot_psms)}
+\item{raw}{A combined mokapot table, typically the output of
+\code{\link{read_mokapot_psms}}.}
 
-\item{run_col}{column name for run (default "run")}
+\item{run_col}{Character. Column name for run (default \code{"run"}).}
 
-\item{spectrum_id_col}{column name for spectrum_id (default "spectrum_id")}
+\item{spectrum_id_col}{Character. Column name for spectrum identifier (default
+\code{"spectrum_id"}).}
 
-\item{score_col}{column name for mokapot score (default "mokapot score")}
+\item{score_col}{Character. Column name for mokapot score used for competition
+(default \code{"mokapot score"}; higher is better).}
 
-\item{q_col}{column name for mokapot q-value (default "mokapot q-value")}
+\item{q_col}{Character. Column name for mokapot q-value (default
+\code{"mokapot q-value"}).}
 
-\item{pep_col}{column name for mokapot PEP (default "mokapot PEP")}
+\item{pep_col}{Character. Column name for mokapot PEP (default
+\code{"mokapot PEP"}).}
 
-\item{id_mode}{"runxid" makes id=run||spectrum_id (recommended); "id" makes id=spectrum_id}
+\item{id_mode}{Character. If \code{"runxid"} (default), sets \code{id} to
+\code{"run||spectrum_id"}. If \code{"id"}, sets \code{id = spectrum_id}.}
 
-\item{unit}{Unit metadata stored in the returned object.}
+\item{unit}{Character. Unit metadata stored in the returned object.}
 
-\item{scope}{Scope metadata stored in the returned object.}
+\item{scope}{Character. Scope metadata stored in the returned object.}
 
-\item{q_source}{Source label stored in metadata.}
+\item{q_source}{Character. Source label stored in metadata.}
 
-\item{q_max_export}{Export ceiling for q-values (usually 1 for mokapot).}
+\item{q_max_export}{Numeric. Export ceiling for q-values (typically 1 for mokapot).}
+}
+\value{
+An object of class \code{dfdr_tbl} (a tibble subclass) with one row per competed
+\code{run + spectrum_id}. The returned table contains the standard columns
+required by \code{diagFDR}: \code{id}, \code{is_decoy}, \code{q}, \code{pep},
+\code{run}, and \code{score}. Metadata are stored in \code{attr(x, "meta")}.
 }
 \description{
-This is the generic "postprocessor" universe: one entry per run+spectrum_id
-selected by the maximum mokapot score (target or decoy).
+Constructs a "postprocessor universe" by selecting (competing) the single best
+scoring entry (target or decoy) per \code{run + spectrum_id} from mokapot PSM
+outputs. This yields one row per spectrum per run and can be used for downstream
+target-decoy diagnostics.
+}
+\examples{
+library(tibble)
+
+raw <- tibble(
+  run = c("r1", "r1"),
+  spectrum_id = c("1001", "1001"),
+  `mokapot score` = c(2.0, 1.0),      # target wins
+  `mokapot q-value` = c(0.01, 0.5),
+  `mokapot PEP` = c(0.02, 0.6),
+  is_target = c(TRUE, FALSE)
+)
+
+x <- mokapot_competed_universe(raw, id_mode = "runxid")
+x
+
 }

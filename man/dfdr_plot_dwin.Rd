@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{dfdr_plot_dwin}
 \alias{dfdr_plot_dwin}
-\title{Plot local decoy support D_alpha_win versus alpha}
+\title{Plot local decoy support \code{D_alpha_win} versus \code{alpha}}
 \usage{
 dfdr_plot_dwin(
   dwin_tbl,
@@ -11,16 +11,29 @@ dfdr_plot_dwin(
 )
 }
 \arguments{
-\item{dwin_tbl}{A local-tail table (e.g. from \code{\link[=dfdr_local_tail]{dfdr_local_tail()}}) containing
-columns \code{alpha}, \code{D_alpha_win}, and \code{list}.}
+\item{dwin_tbl}{A local-tail table (e.g. from \code{\link{dfdr_local_tail}})
+containing columns \code{alpha}, \code{D_alpha_win}, and \code{list}.}
 
-\item{xlab}{X-axis label.}
+\item{xlab}{Character. X-axis label.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot local decoy support D_alpha_win versus alpha
+Plots the number of decoys in a right-neighborhood above each threshold
+(as computed by \code{\link{dfdr_local_tail}}). This approximates how well
+supported the boundary is by nearby decoys.
+}
+\examples{
+library(tibble)
+
+dwin_tbl <- tibble(
+  list = rep(c("A", "B"), each = 4),
+  alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+  D_alpha_win = c(1, 2, 6, 15, 0, 1, 2, 4)
+)
+dfdr_plot_dwin(dwin_tbl)
+
 }

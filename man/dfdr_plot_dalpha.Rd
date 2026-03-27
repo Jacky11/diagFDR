@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{dfdr_plot_dalpha}
 \alias{dfdr_plot_dalpha}
-\title{Plot decoy support D_alpha versus alpha}
+\title{Plot decoy support \eqn{D_\alpha} versus \code{alpha}}
 \usage{
 dfdr_plot_dalpha(
   stab_tbl,
@@ -11,16 +11,29 @@ dfdr_plot_dalpha(
 )
 }
 \arguments{
-\item{stab_tbl}{A stability table (e.g. from \code{\link[=dfdr_curve_stability]{dfdr_curve_stability()}}) containing
-columns \code{alpha}, \code{D_alpha}, and \code{list}.}
+\item{stab_tbl}{A stability table (e.g. from \code{\link{dfdr_curve_stability}})
+containing columns \code{alpha}, \code{D_alpha}, and \code{list}.}
 
-\item{xlab}{X-axis label.}
+\item{xlab}{Character. X-axis label.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot decoy support D_alpha versus alpha
+Plots the number of accepted decoys at each threshold \code{alpha}. This is a
+key stability indicator: very small \eqn{D_\alpha} implies granular/unstable
+behaviour of target-decoy based estimates.
+}
+\examples{
+library(tibble)
+
+stab_tbl <- tibble(
+  list = rep(c("A", "B"), each = 4),
+  alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
+  D_alpha = c(5, 8, 20, 40, 2, 3, 6, 10)
+)
+dfdr_plot_dalpha(stab_tbl)
+
 }

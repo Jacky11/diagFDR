@@ -2,11 +2,18 @@
 % Please edit documentation in R/io_mokapot.R
 \name{mokapot_is_target_to_logical}
 \alias{mokapot_is_target_to_logical}
-\title{Internal: robust coercion of mokapot is_target column to logical}
+\title{Internal: robust coercion of mokapot \code{is_target} column to logical}
 \usage{
 mokapot_is_target_to_logical(x)
 }
+\arguments{
+\item{x}{Vector containing mokapot \code{is_target} values (logical, numeric,
+or character).}
+}
+\value{
+A logical vector of the same length as \code{x}.
+}
 \description{
-Internal: robust coercion of mokapot is_target column to logical
+Internal: robust coercion of mokapot \code{is_target} column to logical
 }
 \keyword{internal}

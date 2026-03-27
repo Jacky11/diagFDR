@@ -7,16 +7,45 @@
 dfdr_pep_reliability_tdc(x, breaks = seq(0, 0.5, by = 0.05), add_decoy = 0L)
 }
 \arguments{
-\item{x}{A dfdr_tbl with pep and is_decoy.}
+\item{x}{A \code{dfdr_tbl} with columns \code{pep} and \code{is_decoy}.}
 
 \item{breaks}{Numeric vector of PEP bin edges.}
 
-\item{add_decoy}{Additive correction to D (default 0). Use 1 for conservative small-sample correction.}
+\item{add_decoy}{Integer. Additive correction to the decoy count in each bin
+(default 0). Use 1 for a conservative small-sample correction.}
 }
 \value{
-Tibble with per-bin summaries.
+A \link[tibble:tibble]{tibble} with one row per PEP bin, including:
+\describe{
+\item{bin}{Formatted bin label.}
+\item{n_target}{Number of targets in the bin.}
+\item{n_decoy}{Number of decoys in the bin.}
+\item{pep_mean_targets}{Mean PEP among targets in the bin.}
+\item{pep_mean_all}{Mean PEP among all entries in the bin.}
+\item{err_hat_target}{Estimated target error proxy \eqn{(D + add\_decoy)/T}, capped at 1.}
+\item{pep_bin_mid}{Midpoint of the PEP bin (useful for plotting).}
+}
 }
 \description{
-Bins targets by predicted PEP and estimates the fraction of false targets in each bin
-using decoys as a proxy (D/T).
+Bins identifications by predicted PEP and estimates an error proxy for targets
+within each bin using decoys as a proxy via a target-decoy-competition (TDC)
+style ratio \eqn{(D + add\_decoy) / T}.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 8000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.9, 0.1)),
+  score = rnorm(n),
+  q = stats::runif(n),
+  pep = stats::runif(n)
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+
+dfdr_pep_reliability_tdc(x, breaks = seq(0, 0.5, by = 0.1), add_decoy = 1L)
+
 }

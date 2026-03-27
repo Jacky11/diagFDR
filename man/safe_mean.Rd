@@ -2,18 +2,18 @@
 % Please edit documentation in R/utils.R
 \name{safe_mean}
 \alias{safe_mean}
-\title{Safe mean that handles NA values}
+\title{Internal: safe mean (NA-robust)}
 \usage{
 safe_mean(x)
 }
 \arguments{
-\item{x}{Numeric vector}
+\item{x}{Numeric vector.}
 }
 \value{
-Mean value or NA_real_
+Numeric scalar mean, or \code{NA_real_}.
 }
 \description{
-Returns the mean of x, with NA values removed.
-If all values are NA, returns NA_real_.
+Returns \code{mean(x, na.rm = TRUE)}. If all values are \code{NA}, returns
+\code{NA_real_}.
 }
 \keyword{internal}

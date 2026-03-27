@@ -2,7 +2,7 @@
 % Please edit documentation in R/io_diann.R
 \name{diann_global_minrunq}
 \alias{diann_global_minrunq}
-\title{DIA-NN: global precursor list built by min run-wise q across runs}
+\title{DIA-NN: global precursor list built by minimum run-wise q across runs}
 \usage{
 diann_global_minrunq(
   rep,
@@ -19,29 +19,47 @@ diann_global_minrunq(
 \arguments{
 \item{rep}{A DIA-NN report table (e.g. returned by \code{\link{read_diann_parquet}}).}
 
-\item{run_col}{Optional. Name of the run column. If \code{NULL}, attempts to detect it
-(e.g. \code{"Run"} or \code{"File.Name"}).}
+\item{run_col}{Optional character. Name of the run column. If \code{NULL},
+attempts to detect it (e.g. \code{"Run"} or \code{"File.Name"}).}
 
-\item{q_col}{Name of the q-value column to aggregate (default \code{"Q.Value"}).}
+\item{q_col}{Character. Name of the q-value column to aggregate (default \code{"Q.Value"}).}
 
-\item{pep_col}{Optional. Name of the PEP column (default \code{"PEP"} if present).}
+\item{pep_col}{Optional character. Name of the PEP column (default \code{"PEP"} if present).}
 
-\item{score_col}{Optional. Name of a score column to carry along (if present).}
+\item{score_col}{Optional character. Name of a score column to carry along (if present).}
 
-\item{q_max_export}{Optional numeric export ceiling used by the tool (e.g. 0.5).
-Stored as metadata for truncation-aware diagnostics.}
+\item{q_max_export}{Optional numeric export ceiling used by the tool (e.g. 0.5),
+stored as metadata for truncation-aware diagnostics.}
 
-\item{unit}{Unit metadata stored in the returned object (default \code{"precursor"}).}
+\item{unit}{Character. Unit metadata stored in the returned object.}
 
-\item{scope}{Scope metadata stored in the returned object (default \code{"aggregated"}).}
+\item{scope}{Character. Scope metadata stored in the returned object.}
 
-\item{q_source}{Source label stored in metadata (default \code{"min_run(Q.Value)"}).}
+\item{q_source}{Character. Source label stored in metadata.}
 }
 \value{
-An \code{dfdr_tbl}.
+A \code{dfdr_tbl} with one row per precursor, where \code{q} equals the minimum
+of the run-wise q-values across runs for that precursor. The returned object is
+intended for diagnostics (e.g. scope disagreement), not as a recommended FDR procedure.
 }
 \description{
 Constructs a precursor-level table by taking the minimum run-wise q-value
-(e.g. \code{Q.Value}) across runs for each \code{Precursor.Id}. This mirrors a
-common scope misuse and is useful for scope-disagreement diagnostics.
+across runs for each \code{Precursor.Id}. This mirrors a common scope misuse
+(aggregating run-wise q-values into a single global list) and is useful for
+scope-disagreement diagnostics.
+}
+\examples{
+library(tibble)
+
+rep <- tibble(
+  Run = c("r1", "r2", "r1", "r2"),
+  Precursor.Id = c("P1", "P1", "P2", "P2"),
+  Decoy = c(0L, 0L, 0L, 1L),
+  Q.Value = c(0.02, 0.01, 0.05, 0.04),
+  PEP = c(0.03, 0.02, 0.1, 0.9)
+)
+
+x <- diann_global_minrunq(rep, run_col = "Run", q_col = "Q.Value", q_max_export = 0.5)
+x
+
 }

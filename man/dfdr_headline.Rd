@@ -7,14 +7,55 @@
 dfdr_headline(x, alpha = 0.01, k_fixed = 10, k_sqrt_mult = 2)
 }
 \arguments{
-\item{x}{dfdr_tbl}
+\item{x}{A \code{dfdr_tbl} containing at least \code{id}, \code{is_decoy}, and a
+q-value column (see Details).}
 
-\item{alpha}{Numeric FDR threshold between 0 and 1.}
+\item{alpha}{Numeric FDR threshold in \eqn{(0,1]} at which headline metrics are
+computed.}
 
-\item{k_fixed}{integer for +/-K sensitivity (default 10)}
+\item{k_fixed}{Integer. Fixed perturbation size used for sensitivity analyses
+based on \eqn{D \pm k} around the decoy count at the threshold.}
 
-\item{k_sqrt_mult}{numeric multiplier for adaptive +/- ceil(mult*sqrt(D))}
+\item{k_sqrt_mult}{Numeric. Multiplier for adaptive perturbations of size
+\eqn{\lceil \mathrm{mult}\sqrt{D} \rceil}.}
+}
+\value{
+A one-row \link[tibble:tibble]{tibble} with headline diagnostics evaluated at
+the specified \code{alpha}. The table includes the number of accepted targets
+and decoys at the threshold and additional sensitivity/stability summaries
+derived from perturbing the boundary decoy support (using \code{k_fixed} and
+\code{k_sqrt_mult}). The returned tibble is intended for reporting and for
+comparison across workflows.
 }
 \description{
-Headline stability diagnostics at a given alpha
+Computes headline counts at the acceptance threshold corresponding to
+\code{alpha} (e.g., numbers of accepted targets/decoys) and simple stability
+diagnostics that quantify how sensitive the result is to small changes in the
+decoy boundary support.
+}
+\details{
+The function assumes that \code{x} contains target/decoy labels in
+\code{is_decoy} and q-values in column \code{q}. If your input uses another
+name (e.g., \code{q_value}), rename it to \code{q} before calling this
+function.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+x <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  pep = NA_real_
+)
+
+# Construct simple TDC q-values from the score (higher is better)
+x$q <- diagFDR:::tdc_qvalues(score = x$score, is_decoy = x$is_decoy, add_decoy = 1L)
+x <- as_dfdr_tbl(x, unit = "psm", scope = "global", q_source = "toy_tdc")
+
+dfdr_headline(x, alpha = 0.01)
+
 }

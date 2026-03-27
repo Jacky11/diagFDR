@@ -10,14 +10,28 @@ dfdr_plot_equal_chance(
 )
 }
 \arguments{
-\item{bands_tbl}{A q-band table (e.g. the \verb{$bands} output of
-\code{\link[=dfdr_equal_chance_qbands]{dfdr_equal_chance_qbands()}}) containing columns \code{q_mean}, \code{decoy_frac}, and \code{n}.}
+\item{bands_tbl}{A q-band table (e.g. \code{out$bands} from
+\code{\link{dfdr_equal_chance_qbands}}) containing columns \code{q_mean},
+\code{decoy_frac}, and \code{n}.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot equal-chance plausibility by q-value bands
+Visualises decoy fractions by q-value band (as produced by
+\code{\link{dfdr_equal_chance_qbands}}). A horizontal reference at 0.5 indicates
+the expected decoy fraction under an "equal-chance" region assumption.
+}
+\examples{
+library(tibble)
+
+bands_tbl <- tibble(
+  q_mean = c(0.05, 0.15, 0.30, 0.45),
+  decoy_frac = c(0.10, 0.20, 0.45, 0.52),
+  n = c(2000, 1500, 800, 400)
+)
+dfdr_plot_equal_chance(bands_tbl)
+
 }

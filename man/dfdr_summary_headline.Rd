@@ -7,11 +7,46 @@
 dfdr_summary_headline(diag)
 }
 \arguments{
-\item{diag}{Output of dfdr_run_all().}
+\item{diag}{A list as returned by \code{\link{dfdr_run_all}}.}
 }
 \value{
-Tibble with one row per list, suitable for exporting as summary_headline.csv.
+A \link[tibble:tibble]{tibble} with one row per element of the input list used
+in \code{\link{dfdr_run_all}} (i.e. one row per \code{list} label). The table
+is suitable for exporting to a CSV (e.g. \code{summary_headline.csv}).
+
+The output typically contains (when available) headline target/decoy counts at
+\code{alpha_main}, local boundary-support columns (e.g. \code{D_alpha_win},
+\code{n_win}), equal-chance pooled columns (e.g. \code{pi_D_hat},
+\code{effect_abs}), and PEP reliability headline quantities (e.g. \code{IPE}).
+If \code{diag$tables$headline} is missing or empty, an empty tibble is returned.
 }
 \description{
-Build a headline summary table (one row per list)
+Convenience helper to assemble a compact, export-ready summary table from the
+output of \code{\link{dfdr_run_all}}. The function merges headline metrics with
+selected columns from other diagnostics (e.g. local tail support, equal-chance
+pooled estimate, and PEP reliability headline if available).
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 4000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = sample(c("run1", "run2"), n, replace = TRUE),
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n)
+)
+df$q <- diagFDR:::tdc_qvalues(df$score, df$is_decoy, add_decoy = 1L)
+df$pep <- NA_real_
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy_tdc")
+
+diag <- dfdr_run_all(
+  xs = list(toy = x),
+  alpha_main = 0.01,
+  compute_pseudo_pvalues = FALSE
+)
+
+dfdr_summary_headline(diag)
+
 }

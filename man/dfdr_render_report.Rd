@@ -2,7 +2,7 @@
 % Please edit documentation in R/render_report.R
 \name{dfdr_render_report}
 \alias{dfdr_render_report}
-\title{Render a human-readable HTML report from dfdr_run_all output}
+\title{Render a human-readable HTML report from \code{dfdr_run_all} output}
 \usage{
 dfdr_render_report(
   diag,
@@ -13,21 +13,60 @@ dfdr_render_report(
 )
 }
 \arguments{
-\item{diag}{Output of \code{\link{dfdr_run_all}}.}
+\item{diag}{A list as returned by \code{\link{dfdr_run_all}}.}
 
-\item{out_dir}{Output directory.}
+\item{out_dir}{Character scalar. Output directory (created if it does not exist).}
 
-\item{filename}{Output HTML filename (default "diagFDR_report.html").}
+\item{filename}{Character scalar. Output HTML filename (default
+\code{"diagFDR_report.html"}).}
 
-\item{self_contained}{Logical. If TRUE, embed resources into a single HTML file
-(may be larger). Default FALSE.}
+\item{self_contained}{Logical. If \code{TRUE}, embed resources into a single HTML
+file (may be larger). Default \code{FALSE}.}
 
-\item{open}{Logical. If TRUE, open the report in the default browser after rendering.}
+\item{open}{Logical. If \code{TRUE}, open the report in the default browser
+after rendering.}
 }
 \value{
-Path to the rendered HTML file (invisibly).
+The path to the rendered HTML file, returned invisibly. The function is called
+for its side effect of creating an HTML report on disk.
 }
 \description{
-This renders an HTML report that summarizes key diagnostics
-and embeds plots from \code{diag$plots}. It is intended for review and verifiable reporting.
+Renders an HTML report that summarises key diagnostics and embeds plots
+contained in \code{diag$plots}. The report is intended for interactive review
+and verifiable reporting.
+}
+\details{
+This function requires the \pkg{rmarkdown} package (suggested dependency) and
+uses the built-in R Markdown template shipped with the package
+(\code{inst/templates/dfdr_report.Rmd}).
+}
+\examples{
+# A minimal example that renders a report from a toy dataset.
+# This example is conditional because rmarkdown is in Suggests.
+if (requireNamespace("rmarkdown", quietly = TRUE)) {
+  library(tibble)
+  tmpdir <- tempdir()
+
+  set.seed(1)
+  n <- 3000
+  df <- tibble(
+    id = as.character(seq_len(n)),
+    run = "run1",
+    is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+    score = rnorm(n),
+    q = pmin(1, rank(-score) / n),
+    pep = NA_real_
+  )
+  x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+
+  diag <- dfdr_run_all(
+    xs = list(toy = x),
+    alpha_main = 0.01,
+    compute_pseudo_pvalues = FALSE
+  )
+
+  # Render to a temporary directory (does not open a browser during checks)
+  dfdr_render_report(diag, out_dir = tmpdir, open = FALSE)
+}
+
 }

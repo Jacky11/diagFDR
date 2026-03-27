@@ -2,7 +2,7 @@
 % Please edit documentation in R/read_mzid.R
 \name{read_dfdr_mzid}
 \alias{read_dfdr_mzid}
-\title{Read mzIdentML into a dfdr_tbl (generic; score-based TDC q-values)}
+\title{Read mzIdentML into a \code{dfdr_tbl} (generic; score-based TDC q-values)}
 \usage{
 read_dfdr_mzid(
   mzid_path,
@@ -19,33 +19,45 @@ read_dfdr_mzid(
 )
 }
 \arguments{
-\item{mzid_path}{Character scalar. Path to an mzIdentML file (.mzid).}
+\item{mzid_path}{Character scalar. Path to an mzIdentML file (\code{.mzid}).}
 
-\item{rank}{Integer scalar. Which \code{SpectrumIdentificationItem@rank} to use. Default 1.}
+\item{rank}{Integer scalar. Which \code{SpectrumIdentificationItem@rank} to use
+(default 1).}
 
-\item{score_accession_preference}{Character vector. Preferred PSI-MS CV accessions to treat
-as the primary PSM score, in priority order.}
+\item{score_accession_preference}{Character vector. Preferred PSI-MS CV accessions
+to treat as the primary PSM score, in priority order.}
 
 \item{score_direction}{One of \code{"auto"}, \code{"lower_better"}, \code{"higher_better"}.
-\code{"auto"} uses minimal built-in rules for common accessions.}
+If \code{"auto"}, applies simple rules for common e-value/expectation accessions.}
 
 \item{add_decoy}{Integer scalar. Additive correction in the TDC FDR estimate:
 \eqn{\widehat{FDR} = (D + add\_decoy) / T}. Default 1.}
 
-\item{min_score_coverage}{Numeric in (0,1]. Minimum fraction of PSMs required to have
-the chosen score CV term. Default 1.0 (strict; no missing scores allowed).}
+\item{min_score_coverage}{Numeric in \eqn{(0,1]}. Minimum fraction of PSMs required to
+have the chosen score CV term. Default 1.0 (strict; no missing scores allowed).}
 
 \item{decoy_regex}{Character scalar. Regex used to infer decoys from protein accessions
-if \code{PeptideEvidence@isDecoy} is not informative. Default catches common patterns.}
+if \code{PeptideEvidence@isDecoy} is not informative.}
 
-\item{unit}{Character. Stored in dfdr_tbl metadata. Default \code{"psm"}.}
+\item{unit}{Character. Stored in \code{dfdr_tbl} metadata (default \code{"psm"}).}
 
-\item{scope}{Character. Stored in dfdr_tbl metadata. Default \code{NA_character_}.}
+\item{scope}{Character. Stored in \code{dfdr_tbl} metadata (default \code{NA}).}
 
-\item{provenance}{Named list. Stored in dfdr_tbl metadata (tool, version, params, command, ...).}
+\item{provenance}{Named list. Stored in metadata (tool, version, parameters, command, etc.).}
 }
 \value{
-A \code{dfdr_tbl}.
+A \code{dfdr_tbl} (tibble subclass) with one row per extracted PSM (at the requested
+\code{rank}). The returned object contains:
+\itemize{
+\item \code{id}: a PSM identifier derived from run and spectrum ID (\code{"run||spectrumID"});
+\item \code{is_decoy}: logical target/decoy label;
+\item \code{score}: an internal score where larger values mean better matches;
+\item \code{q}: reconstructed monotone q-values from TDC using \code{score} and \code{is_decoy};
+\item \code{pep}: \code{NA} (mzIdentML PEPs are not parsed here);
+\item \code{run}: run identifier when available.
+}
+Metadata are stored in \code{attr(x, "meta")} (including \code{unit}, \code{scope},
+\code{q_source}, and \code{provenance}).
 }
 \description{
 Extracts a competed PSM universe (rank-1 by default) from an mzIdentML file,
@@ -53,5 +65,48 @@ determines target/decoy labels, selects a single numeric PSM score CV term,
 and reconstructs q-values using target-decoy counting (TDC).
 }
 \details{
-This is designed for workflows where mzIdentML does not contain explicit q-values or PEPs.
+This function is intended for workflows where mzIdentML does not provide
+explicit q-values or PEPs.
+}
+\examples{
+if (requireNamespace("xml2", quietly = TRUE)) {
+  # Minimal mzIdentML-like file sufficient for diagFDR's parser:
+  # - 1 target and 1 decoy PSM at rank=1, with a numeric cvParam score
+  tmp <- tempfile(fileext = ".mzid")
+  mzid_txt <- paste0(
+    "<?xml version='1.0' encoding='UTF-8'?>\n",
+    "<MzIdentML xmlns='http://psidev.info/psi/pi/mzIdentML/1.1'>\n",
+    "  <SequenceCollection>\n",
+    "    <DBSequence id='DBSeq_t' accession='PROT1'/>\n",
+    "    <DBSequence id='DBSeq_d' accession='REV_PROT2'/>\n",
+    "    <PeptideEvidence id='PE_t' dBSequence_ref='DBSeq_t' isDecoy='false'/>\n",
+    "    <PeptideEvidence id='PE_d' dBSequence_ref='DBSeq_d' isDecoy='true'/>\n",
+    "  </SequenceCollection>\n",
+    "  <DataCollection>\n",
+    "    <AnalysisData>\n",
+    "      <SpectrumIdentificationList>\n",
+    "        <SpectrumIdentificationResult spectraData_ref='runA' spectrumID='scan=1'>\n",
+    "          <SpectrumIdentificationItem rank='1'>\n",
+    "            <PeptideEvidenceRef peptideEvidence_ref='PE_t'/>\n",
+    "            <cvParam accession='MS:1001331' name='X!Tandem:hyperscore' value='50.0'/>\n",
+    "          </SpectrumIdentificationItem>\n",
+    "        </SpectrumIdentificationResult>\n",
+    "        <SpectrumIdentificationResult spectraData_ref='runA' spectrumID='scan=2'>\n",
+    "          <SpectrumIdentificationItem rank='1'>\n",
+    "            <PeptideEvidenceRef peptideEvidence_ref='PE_d'/>\n",
+    "            <cvParam accession='MS:1001331' name='X!Tandem:hyperscore' value='10.0'/>\n",
+    "          </SpectrumIdentificationItem>\n",
+    "        </SpectrumIdentificationResult>\n",
+    "      </SpectrumIdentificationList>\n",
+    "    </AnalysisData>\n",
+    "  </DataCollection>\n",
+    "</MzIdentML>\n"
+  )
+  writeLines(mzid_txt, tmp)
+
+  x <- read_dfdr_mzid(tmp, rank = 1L, score_direction = "higher_better")
+  x
+  range(x$q)
+}
+
 }

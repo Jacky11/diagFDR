@@ -26,6 +26,9 @@ the chosen score CV term.}
 }
 \value{
 Tibble with columns id, run, is_decoy, score_accession, score_name, score_value.
+
+A \link[tibble:tibble]{tibble} with columns \code{id}, \code{run},
+\code{is_decoy}, \code{score_accession}, \code{score_name}, \code{score_value}.
 }
 \description{
 Extracts SpectrumIdentificationItems at the requested rank, derives decoy labels

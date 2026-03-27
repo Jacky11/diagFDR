@@ -2,7 +2,7 @@
 % Please edit documentation in R/io_diann.R
 \name{diann_runxprecursor}
 \alias{diann_runxprecursor}
-\title{DIA-NN -> runxprecursor universe (deduplicated within run by Precursor.Id)}
+\title{DIA-NN -> run-by-precursor universe (deduplicated within run)}
 \usage{
 diann_runxprecursor(
   rep,
@@ -18,30 +18,53 @@ diann_runxprecursor(
 )
 }
 \arguments{
-\item{rep}{DIA-NN report tibble}
+\item{rep}{A DIA-NN report tibble.}
 
-\item{q_col}{q-value column name (default "Q.Value")}
+\item{q_col}{Character. q-value column name (default \code{"Q.Value"}).}
 
-\item{run_col}{optional; auto-detect if NULL}
+\item{run_col}{Optional character. Name of the run column. If \code{NULL}, the
+function attempts to detect one of \code{"Run"}, \code{"File.Name"}, or
+\code{"File.Name.Index"}.}
 
-\item{pep_col}{optional PEP column}
+\item{pep_col}{Optional character. PEP column name (default \code{"PEP"} if present).}
 
-\item{score_col}{optional score column}
+\item{score_col}{Optional character. Score column name (if present).}
 
-\item{q_max_export}{export ceiling (e.g. 0.5)}
+\item{q_max_export}{Optional numeric export ceiling (e.g. 0.5), stored as metadata.}
 
-\item{id_mode}{"runxid" (default) sets id = run||precursor; "id" sets id=Precursor.Id and keeps run separate.}
+\item{id_mode}{Character. Either \code{"runxid"} (default) to set
+\code{id = paste(run, Precursor.Id, sep="||")} or \code{"id"} to set
+\code{id = Precursor.Id} and keep \code{run} separate.}
 
-\item{unit}{Unit metadata stored in the returned object.}
+\item{unit}{Character. Unit metadata stored in the returned object.}
 
-\item{scope}{Scope metadata stored in the returned object.}
+\item{scope}{Character. Scope metadata stored in the returned object.}
 
-\item{q_source}{Source label stored in metadata.}
+\item{q_source}{Character. Label stored in metadata describing the q-value source.}
 }
 \value{
-dfdr_tbl with run column filled and id = paste(run, Precursor.Id, sep="||") OR
-id = Precursor.Id depending on id_mode.
+A \code{dfdr_tbl} with one row per run-by-precursor unit. The returned table
+includes \code{id}, \code{run}, \code{is_decoy}, \code{q}, \code{pep}, and
+\code{score}. Metadata are stored in \code{attr(x, "meta")}.
 }
 \description{
-DIA-NN -> runxprecursor universe (deduplicated within run by Precursor.Id)
+Constructs a run-specific universe by aggregating a DIA-NN report table to one
+row per \code{(run, Precursor.Id)}. The run column is detected automatically
+unless provided. For each group, the minimum q-value is used and \code{is_decoy}
+is \code{TRUE} if any row is a decoy.
+}
+\examples{
+library(tibble)
+
+rep <- tibble(
+  Run = c("r1", "r1", "r2", "r2"),
+  Precursor.Id = c("P1", "P1", "P1", "P2"),
+  Decoy = c(0L, 0L, 1L, 0L),
+  Q.Value = c(0.01, 0.02, 0.03, 0.02),
+  PEP = c(0.02, 0.01, 0.9, 0.05)
+)
+
+x <- diann_runxprecursor(rep, q_col = "Q.Value", run_col = "Run", id_mode = "runxid")
+x
+
 }

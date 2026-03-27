@@ -7,13 +7,38 @@
 dfdr_sumpep(x, alphas)
 }
 \arguments{
-\item{x}{An \code{dfdr_tbl} with non-missing \code{pep}.}
+\item{x}{An \code{dfdr_tbl} with a non-missing \code{pep} column.}
 
-\item{alphas}{Numeric vector of thresholds.}
+\item{alphas}{Numeric vector of thresholds in \eqn{(0,1]}.}
 }
 \value{
-A tibble with \code{sum_PEP} and \code{mean_PEP} for each \code{alpha}.
+A \link[tibble:tibble]{tibble} with one row per \code{alpha}. Columns include:
+\describe{
+\item{alpha}{The threshold.}
+\item{n_targets}{Number of accepted targets (\code{!is_decoy} and \code{q <= alpha}).}
+\item{sum_PEP}{Sum of PEP values among accepted targets (expected false targets).}
+\item{mean_PEP}{Mean PEP among accepted targets.}
+}
 }
 \description{
-Computes \eqn{\sum_{i \in A(\alpha)} PEP_i} among accepted targets for each threshold.
+Computes \eqn{\sum_{i \in A(\alpha)} \mathrm{PEP}_i} among accepted targets
+for each threshold \eqn{\alpha}, where acceptance is defined by \code{q <= alpha}.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  q = pmin(1, rank(-score) / n),
+  pep = stats::runif(n)
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+
+dfdr_sumpep(x, alphas = c(0.001, 0.01, 0.05))
+
 }

@@ -7,13 +7,43 @@
 dfdr_pep_decoy_sanity(x, thresholds = c(0.01, 0.05, 0.1, 0.2))
 }
 \arguments{
-\item{x}{A dfdr_tbl with a non-missing pep column.}
+\item{x}{A \code{dfdr_tbl} with a non-missing \code{pep} column.}
 
-\item{thresholds}{Numeric vector of PEP thresholds to summarize.}
+\item{thresholds}{Numeric vector of PEP thresholds in \eqn{(0,1]} to summarise.}
 }
 \value{
-Tibble with counts and fractions for decoys (and targets optionally).
+A \link[tibble:tibble]{tibble} with one row per \code{threshold}. Columns include:
+\describe{
+\item{threshold}{The PEP cutoff used for counting.}
+\item{n_decoy}{Number of decoys with finite PEP in \eqn{(0,1]}.}
+\item{n_target}{Number of targets with finite PEP in \eqn{(0,1]}.}
+\item{decoy_le}{Count of decoys with \code{pep <= threshold}.}
+\item{target_le}{Count of targets with \code{pep <= threshold}.}
+\item{frac_decoy_le}{\code{decoy_le / n_decoy}.}
+\item{frac_target_le}{\code{target_le / n_target}.}
+}
 }
 \description{
-Reports how many decoys receive surprisingly small PEP values.
+Summarises how many decoys receive surprisingly small PEP values. Under a
+well-calibrated PEP, decoys should typically have high error probabilities;
+large fractions of decoys below small PEP thresholds can indicate issues with
+PEP calibration or labeling.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  q = pmin(1, rank(-score) / n),
+  pep = stats::runif(n)
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+
+dfdr_pep_decoy_sanity(x, thresholds = c(0.01, 0.05, 0.1))
+
 }

@@ -13,19 +13,37 @@ dfdr_plot_pep_density_by_decoy(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl with pep.}
+\item{x}{A \code{dfdr_tbl} with a \code{pep} column.}
 
-\item{pep_max}{Max PEP displayed (default 0.5).}
+\item{pep_max}{Numeric. Maximum PEP displayed (default 0.5).}
 
-\item{bw}{Bandwidth passed to stats::density() via geom_density (optional).}
+\item{bw}{Bandwidth passed to \code{ggplot2::geom_density()}.}
 
-\item{adjust}{Smoothing adjustment passed to geom_density (default 1).}
+\item{adjust}{Numeric smoothing adjustment passed to \code{geom_density()}.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-ggplot
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot PEP density by decoy/target
+Plots density curves of PEP values for targets vs decoys, truncated to
+\code{pep <= pep_max}.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 4000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  q = stats::runif(n, 0, 0.05),
+  pep = stats::runif(n)
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+dfdr_plot_pep_density_by_decoy(x, pep_max = 0.5)
+
 }

@@ -9,15 +9,42 @@ dfdr_curve_stability(x, alphas, k_fixed = 10, k_sqrt_mult = 2)
 \arguments{
 \item{x}{An \code{dfdr_tbl}.}
 
-\item{alphas}{Numeric vector of thresholds.}
+\item{alphas}{Numeric vector of FDR thresholds in \eqn{(0,1]}.}
 
-\item{k_fixed}{Integer. Fixed +/-K sensitivity interval.}
+\item{k_fixed}{Integer. Fixed +/-K sensitivity interval used by
+\code{\link{dfdr_headline}}.}
 
-\item{k_sqrt_mult}{Numeric. Multiplier for adaptive interval.}
+\item{k_sqrt_mult}{Numeric. Multiplier for the adaptive +/- ceiling(mult*sqrt(D))
+interval used by \code{\link{dfdr_headline}}.}
 }
 \value{
-A tibble of stability metrics for each alpha.
+A \link[tibble:tibble]{tibble} with one row per value of \code{alphas}.
+Columns are those returned by \code{\link{dfdr_headline}} plus the
+corresponding \code{alpha}. The table summarizes how headline quantities
+(e.g., accepted target/decoy counts and sensitivity diagnostics) vary with the
+chosen FDR cutoff.
 }
 \description{
-Stability curve across alpha values
+Evaluates \code{\link{dfdr_headline}} over a grid of FDR thresholds
+(\code{alphas}) to obtain a stability curve that can be plotted or compared
+across workflows.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  pep = NA_real_
+)
+
+df$q <- diagFDR:::tdc_qvalues(df$score, df$is_decoy, add_decoy = 1L)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy_tdc")
+
+dfdr_curve_stability(x, alphas = c(1e-3, 5e-3, 1e-2))
+
 }

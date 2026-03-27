@@ -2,7 +2,7 @@
 % Please edit documentation in R/pi0_storey.R
 \name{dfdr_pi0_storey}
 \alias{dfdr_pi0_storey}
-\title{Storey pi0(lambda) tail-uniformity diagnostic}
+\title{Storey \eqn{\pi_0(\lambda)} tail-uniformity diagnostic}
 \usage{
 dfdr_pi0_storey(
   x,
@@ -13,20 +13,49 @@ dfdr_pi0_storey(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl (or data.frame) containing column \code{p}.}
+\item{x}{A \code{dfdr_tbl} (or data.frame) containing column \code{p}.}
 
-\item{lambdas}{Numeric vector in [0,1). Typical range: 0.5--0.95.}
+\item{lambdas}{Numeric vector in \eqn{[0,1)}. Typical range: 0.5--0.95.}
 
-\item{stratify}{Optional character vector of column names for stratification.}
+\item{stratify}{Optional character vector of column names used to stratify the
+diagnostic (e.g. \code{c("run")}).}
 
-\item{min_n}{Minimum number of finite p-values required per stratum.}
+\item{min_n}{Integer. Minimum number of finite p-values required per stratum.}
 
-\item{clamp}{Logical; if TRUE clamp pi0 into \verb{[0,1]} for reporting (default TRUE).}
+\item{clamp}{Logical. If \code{TRUE} (default), clamp \code{pi0_hat} into
+\code{[0,1]} for reporting.}
 }
 \value{
-A list with elements \code{pi0} (tibble) and \code{summary} (tibble).
+A list with components:
+\describe{
+\item{pi0}{A \link[tibble:tibble]{tibble} with one row per \code{lambda} per
+stratum and columns \code{stratum}, \code{lambda}, \code{pi0_hat}, and \code{n}
+(the number of finite p-values in the stratum).}
+\item{summary}{A tibble with one row per stratum, including \code{n} and
+summary statistics of \code{pi0_hat} across \code{lambdas}
+(\code{median_pi0}, \code{sd_pi0}, \code{iqr_pi0}). Strata with \code{n < min_n}
+are reported with \code{NA} metrics and a \code{note}.}
+}
 }
 \description{
-Estimates pi0(lambda) = Card(p > lambda) / ((1-lambda)*m) across a grid of lambdas.
-Intended as a plausibility diagnostic for (pseudo-)p-values.
+Estimates \eqn{\pi_0(\lambda) = \#\{p>\lambda\} / ((1-\lambda)m)} over a grid
+of \code{lambdas}. This is a plausibility diagnostic for (pseudo-)p-values:
+under a well-calibrated null, the upper tail should be approximately uniform,
+leading to stable \eqn{\pi_0(\lambda)} curves.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 6000
+df <- tibble(
+  run = sample(c("run1", "run2"), n, replace = TRUE),
+  # mostly uniform p-values + a small enriched component
+  p = c(stats::runif(5400), stats::rbeta(600, 0.3, 1))
+)
+
+out <- dfdr_pi0_storey(df, stratify = "run", lambdas = seq(0.5, 0.9, by = 0.1), min_n = 500)
+head(out$pi0)
+out$summary
+
 }

@@ -19,13 +19,46 @@ dfdr_equal_chance_qbands(
 \item{low_conf}{Length-2 numeric vector giving the pooled test interval
 (e.g. \code{c(0.2, 0.5)}).}
 
-\item{min_N}{Minimum pooled sample size required for the pooled test to be
-considered stable.}
+\item{min_N}{Integer. Minimum pooled sample size required for the pooled test
+to be considered stable.}
 }
 \value{
-A list with elements \code{bands} (tibble) and \code{pooled} (tibble).
+A list with components:
+\describe{
+\item{bands}{A \link[tibble:tibble]{tibble} with one row per q-band, including
+\code{n} (band size), \code{n_decoy}, \code{decoy_frac}, and \code{q_mean}.}
+\item{pooled}{A one-row tibble with pooled quantities over bands whose
+\code{q_mean} lies within \code{low_conf}, including \code{pi_D_hat} (pooled
+decoy fraction), a Wilson confidence interval, and a binomial test p-value.
+\code{pass_minN} indicates whether \code{min_N} is met. In cases where the
+requested banding is not applicable (e.g. \code{qmax} below the smallest
+nonzero break), fields are returned as \code{NA} and a \code{note} may be
+provided.}
+\item{params}{A list of parameters used (\code{breaks}, \code{low_conf}, \code{min_N}).}
+}
 }
 \description{
 Computes decoy fractions in q-value bands and performs a pooled binomial test
-of whether the decoy fraction is near 0.5 in a mismatch-dominated region.
+of whether the decoy fraction is near 0.5 in a mismatch-dominated region
+(specified by \code{low_conf}).
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 8000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.9, 0.1)),
+  score = rnorm(n),
+  pep = NA_real_
+)
+# Toy q-values in [0, 1]
+df$q <- stats::runif(n)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+
+ec <- dfdr_equal_chance_qbands(x, breaks = c(0, 0.2, 0.5, 1), low_conf = c(0.2, 0.5), min_N = 200)
+ec$pooled
+
 }

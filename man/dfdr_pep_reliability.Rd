@@ -7,18 +7,50 @@
 dfdr_pep_reliability(x, binwidth = 0.05, n_min = 200, pep_max = 0.5)
 }
 \arguments{
-\item{x}{An \code{dfdr_tbl} with a non-missing \code{pep} column.}
+\item{x}{A \code{dfdr_tbl} with a non-missing \code{pep} column.}
 
-\item{binwidth}{Bin width for PEP binning (default 0.05).}
+\item{binwidth}{Numeric bin width for PEP binning (default 0.05).}
 
-\item{n_min}{Minimum bin size to include bins in the IPE summary.}
+\item{n_min}{Integer. Minimum bin size to include bins in the IPE summary.}
 
-\item{pep_max}{Maximum mean PEP to include in the IPE summary (default 0.5).}
+\item{pep_max}{Numeric. Maximum mean PEP to include in the IPE summary
+(default 0.5).}
 }
 \value{
-A list with elements \code{bins} (tibble) and \code{IPE} (numeric).
+A list with components:
+\describe{
+\item{bins}{A \link[tibble:tibble]{tibble} with one row per PEP bin and columns
+\code{pep_mean} (mean predicted PEP), \code{decoy_rate} (observed decoy
+fraction), and \code{n} (bin size).}
+\item{IPE}{Numeric scalar. The internal PEP calibration error (IPE), computed
+as a weighted mean absolute deviation between \code{pep_mean} and
+\code{decoy_rate} across eligible bins (\code{n >= n_min} and
+\code{pep_mean <= pep_max}). \code{NA} if no eligible bins exist.}
+\item{params}{A list of parameters used (\code{binwidth}, \code{n_min},
+\code{pep_max}).}
+}
 }
 \description{
 Bins identifications by predicted PEP and compares mean predicted PEP to the
 observed decoy fraction within each bin (internal target-decoy consistency check).
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  q = pmin(1, rank(-score) / n),         # simple monotone q-like values
+  pep = pmin(1, pmax(0, stats::runif(n))) # toy PEP in [0,1]
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+
+out <- dfdr_pep_reliability(x, binwidth = 0.1, n_min = 50, pep_max = 0.5)
+out$IPE
+head(out$bins)
+
 }

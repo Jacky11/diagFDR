@@ -15,23 +15,42 @@ dfdr_plot_p_density_by_decoy(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl with column p and is_decoy.}
+\item{x}{A \code{dfdr_tbl} with columns \code{p} and \code{is_decoy}.}
 
-\item{p_max}{Max p-value displayed (default 1).}
+\item{p_max}{Numeric. Maximum p-value displayed (default 1).}
 
-\item{bw}{Bandwidth passed to geom_density (optional).}
+\item{bw}{Bandwidth passed to \code{ggplot2::geom_density()}.}
 
-\item{adjust}{Smoothing adjustment (default 1).}
+\item{adjust}{Numeric smoothing adjustment passed to \code{geom_density()}.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 
-\item{log10_x}{If TRUE, plot -log10(p) instead of p (often more informative).}
+\item{log10_x}{Logical. If \code{TRUE}, plot \eqn{-\log_{10}(p)} instead of \code{p}.}
 
-\item{eps}{Lower bound to avoid Inf when log10_x=TRUE.}
+\item{eps}{Numeric. Lower bound used to avoid \code{Inf} when \code{log10_x = TRUE}.}
 }
 \value{
-ggplot
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot (pseudo-)p-value density by decoy/target
+Plots density curves of (pseudo-)p-values for targets vs decoys. Optionally
+plots \eqn{-\log_{10}(p)} to emphasise small p-values.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 4000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  q = stats::runif(n, 0, 0.05),
+  pep = NA_real_,
+  p = stats::runif(n)
+)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy", p_source = "toy")
+dfdr_plot_p_density_by_decoy(x, log10_x = TRUE)
+
 }

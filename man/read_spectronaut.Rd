@@ -7,17 +7,35 @@
 read_spectronaut(path, dec = ".", select = NULL)
 }
 \arguments{
-\item{path}{Path to Spectronaut report (TSV)}
+\item{path}{Character scalar. Path to a Spectronaut report TSV file.}
 
-\item{dec}{Decimal separator (default ".")}
+\item{dec}{Character scalar. Decimal separator passed to \code{fread()} (default \code{"."}).}
 
-\item{select}{Optional character vector of columns to read (NULL = all)}
+\item{select}{Optional character vector of column names to read; \code{NULL} reads all columns.}
 }
 \value{
-data.table with Spectronaut columns
+A \link[tibble:tibble]{tibble} containing the columns present in the Spectronaut
+report (column names depend on the export configuration).
 }
 \description{
-Uses data.table::fread for efficient reading of large files.
-Spectronaut uses comma as decimal separator in some locales;
-adjust dec argument if needed.
+Reads a Spectronaut report exported as tab-separated values (TSV). Uses
+\code{data.table::fread()} for efficient reading of large files.
+}
+\details{
+Spectronaut may use a comma as decimal separator in some locales; set
+\code{dec=","} when needed.
+}
+\examples{
+if (requireNamespace("data.table", quietly = TRUE)) {
+  # Create a tiny TSV and read it back
+  tmp <- tempfile(fileext = ".tsv")
+  txt <- paste0(
+    "R.FileName\tEG.PrecursorId\tEG.IsDecoy\tEG.Qvalue\tEG.PEP\tEG.Cscore\n",
+    "run1\tP1\tFalse\t0.01\t0.02\t120\n",
+    "run1\tP2\tTrue\tNaN\t0.90\t10\n"
+  )
+  writeLines(txt, tmp)
+  read_spectronaut(tmp)
+}
+
 }

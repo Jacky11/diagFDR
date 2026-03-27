@@ -2,18 +2,36 @@
 % Please edit documentation in R/pi0_storey.R
 \name{dfdr_plot_pi0}
 \alias{dfdr_plot_pi0}
-\title{Plot Storey pi0(lambda) curve}
+\title{Plot Storey \eqn{\pi_0(\lambda)} curve}
 \usage{
 dfdr_plot_pi0(pi0_tbl, title = "Storey pi0(lambda) diagnostic")
 }
 \arguments{
-\item{pi0_tbl}{Output \code{$pi0} from \code{\link{dfdr_pi0_storey}}.}
+\item{pi0_tbl}{A tibble, typically \code{out$pi0} from \code{\link{dfdr_pi0_storey}}.
+Must contain columns \code{stratum}, \code{lambda}, and \code{pi0_hat}.}
 
-\item{title}{Plot title.}
+\item{title}{Character. Plot title.}
 }
 \value{
-A ggplot object.
+A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plot Storey pi0(lambda) curve
+Plots \eqn{\pi_0(\lambda)} estimates returned by \code{\link{dfdr_pi0_storey}}.
+Values closer to 1 suggest many nulls (few true effects), while values far below
+1 (especially if unstable across \code{lambda}) may indicate deviations from
+tail-uniformity.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+df <- tibble(
+  stratum = rep("all", 5),
+  lambda = seq(0.5, 0.9, by = 0.1),
+  pi0_hat = c(0.95, 0.96, 0.97, 0.98, 0.99),
+  n = 1000
+)
+p <- dfdr_plot_pi0(df)
+p
+
 }

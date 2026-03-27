@@ -2,7 +2,7 @@
 % Please edit documentation in R/class_dfdr_tbl.R
 \name{as_dfdr_tbl}
 \alias{as_dfdr_tbl}
-\title{Create an dfdr_tbl}
+\title{Create a \code{dfdr_tbl}}
 \usage{
 as_dfdr_tbl(
   x,
@@ -15,23 +15,63 @@ as_dfdr_tbl(
 )
 }
 \arguments{
-\item{x}{A data.frame with columns id,is_decoy,q,pep,run,score (pep/run/score can be NA).}
+\item{x}{A data.frame with columns \code{id}, \code{is_decoy}, \code{q},
+\code{pep}, \code{run}, \code{score} (where \code{pep}/\code{run}/\code{score}
+may be \code{NA} if unavailable). Optionally may contain \code{p}.}
 
-\item{unit}{Character. E.g. "precursor", "psm", "peptide", "protein", "run×precursor".}
+\item{unit}{Character. Statistical unit, e.g. \code{"psm"}, \code{"precursor"},
+\code{"peptide"}, \code{"protein"}.}
 
-\item{scope}{Character. E.g. "runwise", "global", "aggregated".}
+\item{scope}{Character. Scope of FDR control, e.g. \code{"runwise"},
+\code{"global"}, \code{"aggregated"}.}
 
-\item{q_source}{Character describing where q came from.}
+\item{q_source}{Character. Description of where q-values came from (e.g. a
+column name or tool).}
 
 \item{q_max_export}{Numeric. Optional export ceiling used to generate q (if known).}
 
-\item{p_source}{Optional character describing where p came from.}
+\item{p_source}{Optional character describing where \code{p} came from.}
 
-\item{provenance}{Named list (tool, version, params, command).}
+\item{provenance}{Named list carrying provenance information (tool, version,
+parameters, command, etc.).}
 }
 \value{
-An object of class \code{dfdr_tbl} (inheriting from \code{tbl_df}) containing the validated input data with \code{is_decoy} coerced to logical. Metadata (\code{unit}, \code{scope}, \code{q_source}, \code{q_max_export}, \code{provenance}) are stored as attributes and accessible via \code{attr(x, "meta")}.
+An S3 object of class \code{dfdr_tbl} that inherits from
+\link[tibble:tibble]{tbl_df} (and \code{data.frame}). The returned object:
+\itemize{
+\item contains the validated input data with \code{is_decoy} coerced to
+logical (\code{TRUE}/\code{FALSE});
+\item carries metadata in \code{attr(x, "meta")} with entries \code{unit},
+\code{scope}, \code{q_source}, \code{q_max_export}, \code{p_source}, and
+\code{provenance}.
+}
 }
 \description{
-Create an dfdr_tbl
+Coerces input to a tibble, standardizes the \code{is_decoy} column to logical,
+validates required columns and types, attaches metadata, and returns an S3
+object of class \code{dfdr_tbl} for downstream diagnostics.
+}
+\examples{
+library(tibble)
+
+df <- tibble(
+  id = as.character(1:6),
+  run = c("run1","run1","run1","run2","run2","run2"),
+  is_decoy = c(FALSE, FALSE, TRUE, FALSE, TRUE, FALSE),
+  score = c(10, 9, 8, 7, 6, 5),
+  q = c(0.01, 0.02, 0.02, 0.05, 0.06, 0.07),
+  pep = c(0.01, 0.02, NA, 0.05, NA, 0.07)
+)
+
+x <- as_dfdr_tbl(
+  df,
+  unit = "psm",
+  scope = "global",
+  q_source = "toy_q",
+  provenance = list(tool = "toy")
+)
+
+x
+attr(x, "meta")
+
 }

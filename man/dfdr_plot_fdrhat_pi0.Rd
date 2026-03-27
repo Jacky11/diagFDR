@@ -2,7 +2,7 @@
 % Please edit documentation in R/plots.R
 \name{dfdr_plot_fdrhat_pi0}
 \alias{dfdr_plot_fdrhat_pi0}
-\title{Plot Storey-style estimated FDR curve: pi0 * m * t / R(t)}
+\title{Plot Storey-style estimated FDR curve: \eqn{\hat\pi_0 m t / R(t)}}
 \usage{
 dfdr_plot_fdrhat_pi0(
   x,
@@ -16,34 +16,53 @@ dfdr_plot_fdrhat_pi0(
 )
 }
 \arguments{
-\item{x}{A dfdr_tbl (or data.frame) containing columns \code{id}, \code{p}, \code{is_decoy}.}
+\item{x}{A \code{dfdr_tbl} (or data.frame) containing columns \code{id},
+\code{p}, and \code{is_decoy}.}
 
-\item{sel}{Subset to use: "all", "target", or "decoy" (case-insensitive).
-For "target", keeps !is_decoy; for "decoy", keeps is_decoy.}
+\item{sel}{Character. Subset to use: \code{"all"}, \code{"target"}, or \code{"decoy"}.}
 
-\item{pi0.method}{Passed to cp4p::estim.pi0(). One of "st.spline","st.boot","jiang",
-"histo","langaas","pounds","abh","slim". (Do not use "ALL" here.)}
+\item{pi0.method}{Character. Method passed to \code{cp4p::estim.pi0()} (not \code{"ALL"}).}
 
-\item{nbins, pz}{Passed to cp4p::estim.pi0().}
+\item{nbins}{Integer. Passed to \code{cp4p::estim.pi0()}.}
 
-\item{t_grid}{Grid of t values in (0,1] at which to evaluate the curve.}
+\item{pz}{Numeric. Passed to \code{cp4p::estim.pi0()}.}
 
-\item{r_min}{Numeric value, uses to compute R(t) := Card(p <= t) + r_min to avoid division by zero at tiny t.}
+\item{t_grid}{Numeric vector of thresholds in \eqn{(0,1]} at which to evaluate the curve.}
 
-\item{cap_one}{If TRUE, caps FDR_hat at 1.}
+\item{r_min}{Numeric. Minimum value used to determine when to compute the curve
+to avoid division by zero at tiny \code{t}.}
+
+\item{cap_one}{Logical. If \code{TRUE}, caps \code{fdr_hat} at 1.}
 }
 \value{
-A list with:
-\itemize{
-\item plot: ggplot object
-\item data: tibble with t, R, fdr_hat
-\item pi0_hat: numeric
-\item m: integer
+A list with components:
+\describe{
+\item{plot}{A \link[ggplot2:ggplot]{ggplot} object.}
+\item{data}{A \link[tibble:tibble]{tibble} with columns \code{t}, \code{R}, and \code{fdr_hat}.}
+\item{pi0_hat}{Numeric scalar \eqn{\hat\pi_0}.}
+\item{m}{Integer. Number of finite p-values used.}
 }
 }
 \description{
-Given p-values (or pseudo-p-values), estimates pi0 using cp4p::estim.pi0()
-and plots the curve:
-FDR_hat(t) = (pi0_hat * m * t) / R(t),
-where R(t) = Card(p <= t), m = total number of tested hypotheses (after filtering).
+Given p-values (or pseudo-p-values), estimates \eqn{\pi_0} using
+\code{cp4p::estim.pi0()} and plots
+\deqn{\widehat{\mathrm{FDR}}(t) = \hat\pi_0 \, m \, t / R(t),}
+where \eqn{R(t) = \#\{p \le t\}} and \eqn{m} is the number of finite p-values.
+}
+\examples{
+library(tibble)
+
+if (requireNamespace("cp4p", quietly = TRUE)) {
+  set.seed(1)
+  n <- 4000
+  df <- tibble(
+    id = as.character(seq_len(n)),
+    is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+    p = c(stats::runif(3600), stats::rbeta(400, 0.3, 1))
+  )
+  out <- dfdr_plot_fdrhat_pi0(df, sel = "all", pi0.method = "pounds", nbins = 10)
+  out$pi0_hat
+  out$plot
+}
+
 }

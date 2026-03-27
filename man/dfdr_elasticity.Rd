@@ -9,14 +9,44 @@ dfdr_elasticity(x, alphas, eps = 0.2)
 \arguments{
 \item{x}{An \code{dfdr_tbl}.}
 
-\item{alphas}{Numeric vector of thresholds.}
+\item{alphas}{Numeric vector of FDR thresholds in \eqn{(0,1]}.}
 
-\item{eps}{Relative perturbation (e.g. 0.2 compares alpha vs 1.2*alpha).}
+\item{eps}{Numeric scalar \eqn{\epsilon \ge 0}. Relative perturbation (e.g.
+\code{0.2} compares \eqn{\alpha} vs \eqn{1.2\alpha}).}
 }
 \value{
-A tibble with Jaccard overlap for each \code{alpha}.
+A \link[tibble:tibble]{tibble} with one row per \code{alpha}. Columns include:
+\describe{
+\item{alpha}{The baseline threshold.}
+\item{eps}{The relative perturbation.}
+\item{n1}{Number of accepted targets at \code{alpha}.}
+\item{n2}{Number of accepted targets at \code{(1+eps)*alpha}.}
+\item{jaccard}{Jaccard overlap between the two accepted target sets.}
+}
 }
 \description{
-Computes \eqn{S_\alpha(\epsilon) = J(A(\alpha), A((1+\epsilon)\alpha))} where
-\eqn{J} is the Jaccard index on accepted target IDs.
+Computes the stability of the accepted target set under a multiplicative
+perturbation of the threshold:
+\deqn{S_\alpha(\epsilon) = J(A(\alpha), A((1+\epsilon)\alpha)),}
+where \eqn{J} is the Jaccard index and \eqn{A(\alpha)} is the set of accepted
+target IDs at threshold \eqn{\alpha}.
+}
+\examples{
+library(tibble)
+
+set.seed(1)
+n <- 5000
+df <- tibble(
+  id = as.character(seq_len(n)),
+  run = "run1",
+  is_decoy = sample(c(FALSE, TRUE), n, replace = TRUE, prob = c(0.95, 0.05)),
+  score = rnorm(n),
+  pep = NA_real_
+)
+
+df$q <- diagFDR:::tdc_qvalues(df$score, df$is_decoy, add_decoy = 1L)
+x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy_tdc")
+
+dfdr_elasticity(x, alphas = c(1e-3, 5e-3, 1e-2), eps = 0.2)
+
 }

@@ -2,19 +2,23 @@
 % Please edit documentation in R/score_to_pvalue.R
 \name{add_pseudo_pvalues_to_list}
 \alias{add_pseudo_pvalues_to_list}
-\title{Add pseudo p-values to dfdr_tbl objects that have scores but no p-values}
+\title{Add pseudo p-values to \code{dfdr_tbl} objects that have scores but no p-values}
 \usage{
 add_pseudo_pvalues_to_list(xs, method = "decoy_ecdf")
 }
 \arguments{
-\item{xs}{Named list of dfdr_tbl objects}
+\item{xs}{Named list of \code{dfdr_tbl} objects.}
 
-\item{method}{Method passed to score_to_pvalue (default "decoy_ecdf")}
+\item{method}{Character. Method passed to \code{\link{score_to_pvalue}} (default \code{"decoy_ecdf"}).}
 }
 \value{
-Modified list with p column added where applicable
+A list of \code{dfdr_tbl} objects of the same length/order as \code{xs}, with a
+\code{p} column added where applicable.
 }
 \description{
-Add pseudo p-values to dfdr_tbl objects that have scores but no p-values
+Iterates over a named list of \code{dfdr_tbl} objects and, where a finite \code{p}
+column is missing but \code{score} and \code{is_decoy} are available, adds a new
+\code{p} column computed by \code{\link{score_to_pvalue}}. Updates the metadata
+attribute \code{p_source}.
 }
 \keyword{internal}

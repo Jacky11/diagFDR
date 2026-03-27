@@ -2,11 +2,22 @@
 % Please edit documentation in R/io_mokapot.R
 \name{compete_max_score}
 \alias{compete_max_score}
-\title{Compete winners by max score within keys (one per run+spectrum_id)}
+\title{Compete winners by maximum score within keys (one per run+spectrum_id)}
 \usage{
 compete_max_score(df, keys, score_col)
 }
+\arguments{
+\item{df}{A data frame.}
+
+\item{keys}{Character vector of column names defining groups to compete within.}
+
+\item{score_col}{Character scalar giving the score column name.}
+}
+\value{
+A data frame with at most one row per unique combination of \code{keys},
+retaining the row with the maximum score (ties broken by taking a single row).
+}
 \description{
-Compete winners by max score within keys (one per run+spectrum_id)
+Compete winners by maximum score within keys (one per run+spectrum_id)
 }
 \keyword{internal}

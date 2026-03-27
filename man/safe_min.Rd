@@ -2,17 +2,25 @@
 % Please edit documentation in R/utils.R
 \name{safe_min}
 \alias{safe_min}
-\title{Safe minimum that handles NA values}
+\title{Internal: safe finite minimum}
 \usage{
+safe_min(x)
+
 safe_min(x)
 }
 \arguments{
 \item{x}{Numeric vector}
 }
 \value{
+Numeric scalar minimum of finite values, or \code{NA_real_}.
+
 Minimum value or NA_real_
 }
 \description{
+Returns the minimum of finite values in \code{x}. Non-finite values
+(\code{NA}, \code{Inf}, \code{-Inf}) are removed. If no finite values remain,
+returns \code{NA_real_}.
+
 Returns the minimum of x, with NA values removed.
 If all values are NA, returns NA_real_.
 }
