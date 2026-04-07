@@ -61,10 +61,11 @@
 #' }
 #'
 #' @examples
+#' \donttest{
 #' library(tibble)
 #'
 #' set.seed(1)
-#' n <- 5000
+#' n <- 2000
 #' df <- tibble(
 #'   id = as.character(seq_len(n)),
 #'   run = sample(c("run1", "run2"), n, replace = TRUE),
@@ -86,7 +87,7 @@
 #' names(diag$tables)
 #' names(diag$plots)
 #' diag$tables$headline
-#'
+#' }
 #' @export
 dfdr_run_all <- function(xs,
                          alpha_main = 0.01,
