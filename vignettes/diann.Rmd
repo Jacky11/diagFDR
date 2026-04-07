@@ -111,7 +111,7 @@ diag$plots$equal_chance__global
 The following code shows how to run the pipeline on a real DIA-NN `report.parquet`.
 
 ```{r real-diann, eval=FALSE}
-# Requires arrow (in Suggests)
+# Requires arrow 
 rep <- read_diann_parquet("path/to/report.parquet")
 
 # (A) Global precursor list using Global.Q.Value
