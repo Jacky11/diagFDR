@@ -128,10 +128,11 @@ Diagnostics include (depending on available columns):
 }
 }
 \examples{
+\donttest{
 library(tibble)
 
 set.seed(1)
-n <- 5000
+n <- 2000
 df <- tibble(
   id = as.character(seq_len(n)),
   run = sample(c("run1", "run2"), n, replace = TRUE),
@@ -153,5 +154,5 @@ diag <- dfdr_run_all(
 names(diag$tables)
 names(diag$plots)
 diag$tables$headline
-
+}
 }
