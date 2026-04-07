@@ -141,7 +141,7 @@ x_mzid <- read_dfdr_mzid(
 
   # Choose a score CV term (priority list) and interpret its direction
   score_accession_preference = c(
-    "MS:1002257", # example: MS-GF:RawScore (often higher is better)
+    "MS:1002257", # MS-GF:RawScore (higher is better)
     "MS:1001330", # Mascot:score (higher is better)
     "MS:1001328", # SEQUEST:xcorr (higher is better)
     "MS:1002052",

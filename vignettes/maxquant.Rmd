@@ -32,7 +32,7 @@ The typical workflow is:
 
 ## Runnable toy example (no external files required)
 
-We start with a simulated dataset that resembles the `dfdr_tbl` returned by
+We start with a simulated dataset that is similar to the `dfdr_tbl` returned by
 `read_dfdr_maxquant_msms()`. Any software producing outputs that can be mapped to
 columns `id`, `is_decoy`, `q`, `pep`, `run`, and `score` can similarly be used.
 
@@ -101,7 +101,6 @@ diag$plots$equal_chance__MaxQuant_PSM
 ## Real MaxQuant workflow (msms.txt)
 
 The code below shows how to run **diagFDR** directly from a MaxQuant `msms.txt` file.
-It is included for reference.
 
 ```{r real-maxquant, eval=FALSE}
 library(diagFDR)
@@ -167,8 +166,8 @@ x_mq <- read_dfdr_maxquant_msms(
 diag <- dfdr_run_all(
   xs = list(MaxQuant_PSM = x_mq),
   alpha_main = 0.01,
-  compute_pseudo_pvalues = TRUE,   # <-- Automatically generates pseudo p-values from scores
-  pseudo_pvalue_method = "decoy_ecdf",  # <-- Most defensible method for arbitrary scores
+  compute_pseudo_pvalues = TRUE,   # generates pseudo p-values from scores
+  pseudo_pvalue_method = "decoy_ecdf",  # Most defensible method for arbitrary scores
   p_stratify = "run"  # Optional: stratify p-value diagnostics by run
 )
 
@@ -197,7 +196,6 @@ dfdr_render_report(diag, out_dir = "diagFDR_maxquant_out")
 When compute_pseudo_pvalues = TRUE with method = "decoy_ecdf":
 
     Pseudo p-values are computed as right-tail probabilities under the decoy score distribution
-    P-value histogram: Should show enrichment near 0 (alternative) and flatness in the tail (null)
     π₀ estimate: Estimates the proportion of true nulls; should be stable across λ
     BH comparison: Compares BH-FDR to TDA-FDR; agreement supports consistent FDR control
 

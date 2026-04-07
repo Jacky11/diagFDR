@@ -33,7 +33,7 @@ The workflow is:
 
 ## Runnable toy example (no external files required)
 
-We start with a small simulated dataset that resembles a competed-winner mokapot output.
+We start with a small simulated dataset that is similar to a competed-winner mokapot output.
 Any workflow producing a table that can be mapped to columns
 `id`, `is_decoy`, `q`, `pep`, `run`, and `score` can similarly be used.
 
@@ -123,7 +123,7 @@ raw <- read_mokapot_psms(
 # Construct competed winners (1 per run+spectrum_id; max mokapot score)
 x <- mokapot_competed_universe(
   raw,
-  id_mode = "runxid",        # recommended: id = run||spectrum_id
+  id_mode = "runxid",        
   unit = "psm",
   scope = "global",
   q_source = "mokapot q-value",

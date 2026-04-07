@@ -109,7 +109,6 @@ diag$plots$equal_chance__global
 ## Real DIA-NN parquet workflow
 
 The following code shows how to run the pipeline on a real DIA-NN `report.parquet`.
-It is included for reference.
 
 ```{r real-diann, eval=FALSE}
 # Requires arrow (in Suggests)
@@ -173,11 +172,11 @@ dfdr_render_report(diag, out_dir = "diagFDR_diann_out")
 
 ## Interpretation notes
 
-- **Scope matters**: run-wise q-values (`Q.Value`) and global q-values (`Global.Q.Value`)
+- **Scope**: run-wise q-values (`Q.Value`) and global q-values (`Global.Q.Value`)
   do not control the same multiple-testing universe. Constructing experiment-wide lists by
   aggregating run-wise q-values (e.g., taking `min(Q.Value)` across runs) is generally anti-conservative.
 
-- **Stability matters**: stringent cutoffs can enter a *granular regime* where only a few decoys
+- **Stability**: stringent cutoffs can enter a *granular regime* where only a few decoys
   support the boundary. Inspect `D_alpha`, `CV_hat`, and the local boundary support `D_alpha_win`
   before making strong claims at very small alpha.
 
