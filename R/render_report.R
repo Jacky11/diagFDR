@@ -71,6 +71,7 @@ dfdr_render_report <- function(diag, out_dir,
     output_format = rmarkdown::html_document(
       self_contained = self_contained, toc = TRUE, toc_depth = 3, theme = "readable"
     ),
+    intermediates_dir = out_dir,
     params = list(diag = diag, out_dir = out_dir),
     envir = new.env(parent = globalenv()),
     quiet = TRUE
