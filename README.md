@@ -19,16 +19,21 @@ False discovery rate (FDR) control is central to the credibility of peptide and 
 
 ## 2. Installation
 
-It is recommended to install the latest version of R. 
+It is recommended to install the latest version of R. The CRAN version of the `diagFDR` package can be install using:
 
-The installation of the development version of the `diagFDR` package can be performed by:
+```
+install.packages("diagFDR")
+```
+
+Alternatively, you can also install the development version of the `diagFDR` package that is on GitHub with:
 ```
 if(!requireNamespace("devtools", quietly = TRUE)){
    install.packages("devtools") 
 }
 devtools::install_github("Jacky11/diagFDR")
 ```
-You can now load it inside the R session:
+
+After installation, you can now load it inside the R session:
 ```
 library(diagFDR)
 ```
