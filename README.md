@@ -9,7 +9,8 @@
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="GPL v3 License"></a>
   <a href="https://cran.r-project.org/web/packages/diagFDR/index.html"><img src="https://cranlogs.r-pkg.org/badges/grand-total/diagFDR?color=green" alt="Total Downloads"></a>
   <a href="https://cran.r-project.org/package=diagFDR"> <img src="https://cranlogs.r-pkg.org/badges/last-month/diagFDR?color=blue" alt="Monthly Downloads"> </a>
-  <a href="[https://www.biorxiv.org/content/10.64898/2026.04.16.718468]">
+  <a href="https://doi.org/10.64898/2026.04.16.718468">
+    <img src="https://img.shields.io/badge/https://doi.org/10.64898/2026.04.16.718468-green.svg" alt="DOI Badge">
 </div></a>
 
 ## 1. Description
