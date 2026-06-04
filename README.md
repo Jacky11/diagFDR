@@ -5,9 +5,13 @@
 </p>
 
 <div align="center" style="margin-top: 10px;">
+  <a href="https://cran.r-project.org/web/packages/diagFDR/index.html"><img src="https://www.r-pkg.org/badges/version/diagFDR" alt="Version"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="GPL v3 License"></a>
+  <a href="https://cran.r-project.org/web/packages/diagFDR/index.html"><img src="https://cranlogs.r-pkg.org/badges/grand-total/diagFDR?color=green" alt="Total Downloads"></a>
+  <a href="https://cran.r-project.org/package=diagFDR"> <img src="https://cranlogs.r-pkg.org/badges/last-month/diagFDR?color=blue" alt="Monthly Downloads"> </a>
+  <a href="[https://www.biorxiv.org/content/10.64898/2026.04.16.718468]">
 </div></a>
-  
+
 ## 1. Description
 
 False discovery rate (FDR) control is central to the credibility of peptide and protein identifications in mass spectrometry–based proteomics. **diagFDR** provides pipeline-agnostic diagnostics for target–decoy workflows that assess calibration and stability of reported confidence measures. It checks the coherence of scores, q-values, and posterior error probabilities (PEPs), quantifies decoy support near operating thresholds, measures cutoff sensitivity, and evaluates the equal-chance assumption using q-value band diagnostics.
