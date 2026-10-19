@@ -1,34 +1,20 @@
 Package: diagFDR
-Title: Verifiable FDR Diagnostics for Proteomics
-Version: 0.1.0
+Title: Assessing False Discovery Rate Claims in Proteomics
+Version: 0.1.2
 Authors@R: c(person("Quentin", "Giai Gianetto", email = "quentin.giaigianetto@pasteur.fr", role = c("aut", "cre")))
-Description: Provides methods to compute verifiable false discovery rate (FDR) diagnostic checks for workflows based on target-decoy competition and related confidence measures. Implements calibration, stability and tail diagnostics, including tail support, threshold elasticity, posterior error probability (PEP) reliability, and equal-chance checks.
+Description: Provides scope, calibration and stability diagnostics to assess false discovery rate (FDR) claims in peptide and protein identification workflows based on target-decoy competition and related confidence measures. Includes the recomputed decoy ratio of the reported list, accepted decoy counts and local decoy support, threshold elasticity, posterior error probability (PEP) concordance with the decoys, equal-chance checks and p-value calibration, with an HTML report. If you used this package in your research, please cite the associated preprint <doi:10.64898/2026.04.16.718468>. Detailed examples of using this package can also be found on the GitHub repository (<https://github.com/Jacky11/diagFDR>).
+URL: https://www.biorxiv.org/content/10.64898/2026.04.16.718468
 License: GPL-3
 Encoding: UTF-8
-Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
 Depends: R (>= 4.2.0)
-Imports:
-    dplyr,
-    tibble,
-    ggplot2,
-    purrr,
-    rlang,
-    readr,
-    xml2, 
-    cp4p,
-    tidyr,
-    scales,
-    data.table
-Suggests:
-    arrow,
-    knitr,
-    officer,
-    rvg,
-    testthat (>= 3.0.0),
-    withr,
-    rmarkdown,
-    jsonlite
+Imports: dplyr, tibble, ggplot2, purrr, rlang, readr, xml2, cp4p,
+        tidyr, scales, data.table
+Suggests: arrow, knitr, officer, rvg, testthat (>= 3.0.0), withr,
+        rmarkdown, jsonlite
 VignetteBuilder: knitr
 Config/testthat/edition: 3
-
+NeedsCompilation: no
+Packaged: 2026-10-19 14:29:35 UTC; root
+Author: Quentin Giai Gianetto [aut, cre]
+Maintainer: Quentin Giai Gianetto <quentin.giaigianetto@pasteur.fr>
