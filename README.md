@@ -1,4 +1,4 @@
-<h1 align="center">diagFDR: Verifiable FDR Diagnostics for Proteomics</h1>
+<h1 align="center">diagFDR: Assessing False Discovery Rate Claims in Proteomics</h1>
 
 <p align="center" style="max-width: 100%; max-height: 100%;">
   <img src="diagFDR_hex.png" width="250" height="300">
