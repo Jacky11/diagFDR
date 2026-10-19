@@ -2,39 +2,54 @@
 % Please edit documentation in R/flag_headline.R
 \name{flag_headline}
 \alias{flag_headline}
-\title{Flag diagnostic values based on heuristic thresholds}
+\title{Flag headline diagnostics as review alerts}
 \usage{
 flag_headline(headline_tbl)
 }
 \arguments{
-\item{headline_tbl}{A data.frame/tibble of headline diagnostics. It may contain
-one or multiple rows. If some expected columns are missing, they are created
-and filled with \code{NA}.}
+\item{headline_tbl}{A data.frame/tibble of headline diagnostics. Missing
+expected columns are created and filled with \code{NA}. Optional columns
+\code{support_index}, \code{eq_evaluable} and \code{eq_reason} are used when
+present.}
 }
 \value{
-A \link[tibble:tibble]{tibble} (or data frame) with the same rows as
-\code{headline_tbl} and additional columns:
-\describe{
-\item{flag_Dalpha}{Flag based on \code{D_alpha} (decoy support).}
-\item{flag_CV}{Flag based on \code{CV_hat} (stability/variability).}
-\item{flag_Dwin}{Flag based on \code{D_alpha_win} (local tail support).}
-\item{flag_IPE}{Flag based on \code{IPE} (internal PEP calibration error).}
-\item{flag_FDR}{Flag comparing \code{FDR_hat} to the nominal \code{alpha}.}
-\item{flag_equalchance}{Flag based on \code{effect_abs} (equal-chance deviation).}
-\item{status}{Overall triage status: \code{"VALID"}, \code{"CAUTION"}, or
-\code{"REVIEW_NEEDED"}.}
-\item{interpretation}{A short human-readable interpretation string.}
-}
+A \link[tibble:tibble]{tibble} with the rows of \code{headline_tbl} and
+additional columns \code{flag_Dalpha}, \code{flag_support} (decoy-support
+index), \code{flag_Dwin}, \code{flag_IPE}, \code{flag_FDR} (recomputed
+decoy ratio), \code{flag_equalchance}, \code{status} (\code{"NO_ALERT"},
+\code{"CAUTION"} or \code{"ALERT"}) and \code{interpretation}. Flag values are
+\code{"OK"}, \code{"CAUTION*"}, \code{"ALERT_*"}, \code{"NE_*"} (not
+evaluable) or \code{"NA"} (not computed).
 }
 \description{
-Adds simple, ASCII-only flags and a coarse overall status to a headline
-diagnostics table (typically produced by \code{\link{dfdr_headline}} or the
-\code{headline} table inside \code{\link{dfdr_run_all}}). The heuristics are
-intended for quick triage in reports; they do not replace manual review.
+Adds ASCII flags and a coarse triage status to a headline diagnostics table
+(typically the \code{headline} table of \code{\link{dfdr_run_all}}). The flags
+are \emph{review alerts} on internal (target-decoy) diagnostics. They are not a
+pass/fail verdict: a list that raises no alert has passed internal checks
+only, and decoy validity itself requires external evidence (e.g. entrapment).
 }
 \details{
-Rendering as icons (if desired) can be handled downstream (e.g. in an HTML
-template); this function returns plain text labels for portability.
+Thresholds follow the diagFDR paper (guidelines, not cut-offs). Their
+evidential basis differs (derived check, simulation-informed alert, heuristic
+alert; see \code{\link{dfdr_alert_basis}}):
+\itemize{
+  \item decoy count: alert if \eqn{D_\alpha < 10}, caution if \eqn{< 50};
+  \item decoy-support index \eqn{D_\alpha^{-1/2}}: alert if \eqn{> 0.30},
+    caution if \eqn{> 0.15};
+  \item local boundary support \eqn{D_{\alpha,win}}: alert if \eqn{< 5},
+    caution if \eqn{< 20};
+  \item decoy-reference PEP concordance, IPE (target-decoy comparator):
+    alert if \eqn{> 0.05} (heuristic);
+  \item recomputed decoy ratio: alert if \eqn{D_\alpha/T_\alpha > 1.5\alpha},
+    caution if \eqn{> 1.2\alpha};
+  \item equal chance under paired target-decoy competition (decoy fraction
+    in the low-confidence q band): alert if
+    \eqn{|\hat\pi_D - 0.5| > 0.15}, caution if \eqn{> 0.10}; reported as not
+    evaluable (\code{"NE_two_pass"}) when the list comes from a two-pass
+    export, whose low-confidence region is conditioned by the first pass. For a
+    DIA-NN list whose pass status was not given (\code{two_pass = NA}), an
+    imbalance is reported as \code{"CAUTION_imbalance_pass_unknown"}.
+}
 }
 \examples{
 library(tibble)
@@ -43,11 +58,13 @@ headline_tbl <- tibble(
   list = c("A", "B"),
   alpha = 0.01,
   D_alpha = c(5, 80),
-  CV_hat = c(0.35, 0.10),
+  support_index = 1 / sqrt(c(5, 80)),
   D_alpha_win = c(2, 30),
   IPE = c(0.12, 0.02),
   FDR_hat = c(0.02, 0.009),
-  effect_abs = c(0.18, 0.05)
+  effect_abs = c(0.18, 0.05),
+  eq_evaluable = c(TRUE, FALSE),
+  eq_reason = c(NA, "two_pass")
 )
 
 flag_headline(headline_tbl)

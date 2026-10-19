@@ -28,13 +28,13 @@ diagnostic (e.g. \code{c("run")}).}
 \value{
 A list with components:
 \describe{
-\item{pi0}{A \link[tibble:tibble]{tibble} with one row per \code{lambda} per
-stratum and columns \code{stratum}, \code{lambda}, \code{pi0_hat}, and \code{n}
-(the number of finite p-values in the stratum).}
-\item{summary}{A tibble with one row per stratum, including \code{n} and
-summary statistics of \code{pi0_hat} across \code{lambdas}
-(\code{median_pi0}, \code{sd_pi0}, \code{iqr_pi0}). Strata with \code{n < min_n}
-are reported with \code{NA} metrics and a \code{note}.}
+  \item{pi0}{A \link[tibble:tibble]{tibble} with one row per \code{lambda} per
+  stratum and columns \code{stratum}, \code{lambda}, \code{pi0_hat}, and \code{n}
+  (the number of finite p-values in the stratum).}
+  \item{summary}{A tibble with one row per stratum, including \code{n} and
+  summary statistics of \code{pi0_hat} across \code{lambdas}
+  (\code{median_pi0}, \code{sd_pi0}, \code{iqr_pi0}). Strata with \code{n < min_n}
+  are reported with \code{NA} metrics and a \code{note}.}
 }
 }
 \description{

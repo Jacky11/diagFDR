@@ -2,17 +2,17 @@
 % Please edit documentation in R/plots.R
 \name{dfdr_plot_cv}
 \alias{dfdr_plot_cv}
-\title{Plot \code{CV_hat} versus \code{alpha}}
+\title{Plot the decoy-support index versus \code{alpha}}
 \usage{
 dfdr_plot_cv(
   stab_tbl,
   xlab = "alpha (log10)",
-  title = "Stability proxy CV_hat vs alpha"
+  title = "Decoy-support index D_alpha^(-1/2) vs alpha"
 )
 }
 \arguments{
 \item{stab_tbl}{A stability table (e.g. from \code{\link{dfdr_curve_stability}})
-with columns \code{alpha}, \code{CV_hat}, and \code{list}.}
+with columns \code{alpha}, \code{support_index}, and \code{list}.}
 
 \item{xlab}{Character. X-axis label.}
 
@@ -22,7 +22,7 @@ with columns \code{alpha}, \code{CV_hat}, and \code{list}.}
 A \link[ggplot2:ggplot]{ggplot} object.
 }
 \description{
-Plots a stability proxy (\code{CV_hat}) against the threshold \code{alpha} for
+Plots the decoy-support index \eqn{D_\alpha^{-1/2}} (column \code{support_index}) against the threshold \code{alpha} for
 one or more lists.
 }
 \examples{
@@ -31,7 +31,7 @@ library(tibble)
 stab_tbl <- tibble(
   list = rep(c("A", "B"), each = 4),
   alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
-  CV_hat = c(0.30, 0.22, 0.15, 0.12, 0.40, 0.28, 0.20, 0.18)
+  support_index = c(0.30, 0.22, 0.15, 0.12, 0.40, 0.28, 0.20, 0.18)
 )
 dfdr_plot_cv(stab_tbl)
 

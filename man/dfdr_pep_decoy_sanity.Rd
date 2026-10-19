@@ -14,13 +14,13 @@ dfdr_pep_decoy_sanity(x, thresholds = c(0.01, 0.05, 0.1, 0.2))
 \value{
 A \link[tibble:tibble]{tibble} with one row per \code{threshold}. Columns include:
 \describe{
-\item{threshold}{The PEP cutoff used for counting.}
-\item{n_decoy}{Number of decoys with finite PEP in \eqn{(0,1]}.}
-\item{n_target}{Number of targets with finite PEP in \eqn{(0,1]}.}
-\item{decoy_le}{Count of decoys with \code{pep <= threshold}.}
-\item{target_le}{Count of targets with \code{pep <= threshold}.}
-\item{frac_decoy_le}{\code{decoy_le / n_decoy}.}
-\item{frac_target_le}{\code{target_le / n_target}.}
+  \item{threshold}{The PEP cutoff used for counting.}
+  \item{n_decoy}{Number of decoys with finite PEP in \eqn{(0,1]}.}
+  \item{n_target}{Number of targets with finite PEP in \eqn{(0,1]}.}
+  \item{decoy_le}{Count of decoys with \code{pep <= threshold}.}
+  \item{target_le}{Count of targets with \code{pep <= threshold}.}
+  \item{frac_decoy_le}{\code{decoy_le / n_decoy}.}
+  \item{frac_target_le}{\code{target_le / n_target}.}
 }
 }
 \description{

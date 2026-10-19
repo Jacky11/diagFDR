@@ -15,7 +15,8 @@ mokapot_competed_universe(
   unit = "psm",
   scope = "global",
   q_source = "mokapot q-value",
-  q_max_export = 1
+  q_max_export = 1,
+  q_mode = c("as_exported", "recount")
 )
 }
 \arguments{
@@ -46,6 +47,10 @@ mokapot_competed_universe(
 \item{q_source}{Character. Source label stored in metadata.}
 
 \item{q_max_export}{Numeric. Export ceiling for q-values (typically 1 for mokapot).}
+
+\item{q_mode}{Character. \code{"as_exported"} (default) keeps mokapot's
+q-values. \code{"recount"} recomputes target-decoy q-values
+(\eqn{(D+1)/T}, running minimum) on the competed winners from the score.}
 }
 \value{
 An object of class \code{dfdr_tbl} (a tibble subclass) with one row per competed
@@ -58,6 +63,15 @@ Constructs a "postprocessor universe" by selecting (competing) the single best
 scoring entry (target or decoy) per \code{run + spectrum_id} from mokapot PSM
 outputs. This yields one row per spectrum per run and can be used for downstream
 target-decoy diagnostics.
+}
+\details{
+mokapot computes its q-values by target-decoy counting over all the PSMs it
+receives. When several candidate PSMs per spectrum are passed (e.g. ranks
+1--10 from MS2Rescore), those q-values refer to that larger universe; after
+competition to one winner per spectrum, thresholding the exported q-values
+no longer reproduces the nominal decoy ratio. Use \code{q_mode = "recount"}
+to obtain q-values defined on the competed universe, and report which one
+was used.
 }
 \examples{
 library(tibble)

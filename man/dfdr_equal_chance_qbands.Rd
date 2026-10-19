@@ -2,7 +2,7 @@
 % Please edit documentation in R/diag_calibration.R
 \name{dfdr_equal_chance_qbands}
 \alias{dfdr_equal_chance_qbands}
-\title{Equal-chance plausibility by q-value bands}
+\title{Equal chance under paired target-decoy competition, by q-value bands}
 \usage{
 dfdr_equal_chance_qbands(
   x,
@@ -25,22 +25,25 @@ to be considered stable.}
 \value{
 A list with components:
 \describe{
-\item{bands}{A \link[tibble:tibble]{tibble} with one row per q-band, including
-\code{n} (band size), \code{n_decoy}, \code{decoy_frac}, and \code{q_mean}.}
-\item{pooled}{A one-row tibble with pooled quantities over bands whose
-\code{q_mean} lies within \code{low_conf}, including \code{pi_D_hat} (pooled
-decoy fraction), a Wilson confidence interval, and a binomial test p-value.
-\code{pass_minN} indicates whether \code{min_N} is met. In cases where the
-requested banding is not applicable (e.g. \code{qmax} below the smallest
-nonzero break), fields are returned as \code{NA} and a \code{note} may be
-provided.}
-\item{params}{A list of parameters used (\code{breaks}, \code{low_conf}, \code{min_N}).}
+  \item{bands}{A \link[tibble:tibble]{tibble} with one row per q-band, including
+  \code{n} (band size), \code{n_decoy}, \code{decoy_frac}, and \code{q_mean}.}
+  \item{pooled}{A one-row tibble with pooled quantities over bands whose
+  \code{q_mean} lies within \code{low_conf}, including \code{pi_D_hat} (pooled
+  decoy fraction), a Wilson confidence interval, and a binomial test p-value.
+  \code{pass_minN} indicates whether \code{min_N} is met. In cases where the
+  requested banding is not applicable (e.g. \code{qmax} below the smallest
+  nonzero break), fields are returned as \code{NA} and a \code{note} may be
+  provided.}
+  \item{params}{A list of parameters used (\code{breaks}, \code{low_conf}, \code{min_N}).}
 }
 }
 \description{
 Computes decoy fractions in q-value bands and performs a pooled binomial test
 of whether the decoy fraction is near 0.5 in a mismatch-dominated region
-(specified by \code{low_conf}).
+(specified by \code{low_conf}). The check assumes paired 1:1 target-decoy
+competition, a single-pass export and an unconditioned low-confidence band:
+targets and decoys listed separately, or a second pass on a library reduced
+by a first pass, move the fraction away from 0.5 even with valid decoys.
 }
 \examples{
 library(tibble)

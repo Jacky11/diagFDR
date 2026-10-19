@@ -15,7 +15,7 @@ mzid_parse_psms(
 \arguments{
 \item{mzid_path}{Character scalar. Path to an mzIdentML file.}
 
-\item{rank}{Integer scalar. Which \code{SpectrumIdentificationItem@rank} to extract.}
+\item{rank}{Integer scalar. Which `SpectrumIdentificationItem@rank` to extract.}
 
 \item{score_accession_preference}{Character vector of preferred score accessions.}
 
@@ -28,7 +28,7 @@ the chosen score CV term.}
 Tibble with columns id, run, is_decoy, score_accession, score_name, score_value.
 
 A \link[tibble:tibble]{tibble} with columns \code{id}, \code{run},
-\code{is_decoy}, \code{score_accession}, \code{score_name}, \code{score_value}.
+  \code{is_decoy}, \code{score_accession}, \code{score_name}, \code{score_value}.
 }
 \description{
 Extracts SpectrumIdentificationItems at the requested rank, derives decoy labels

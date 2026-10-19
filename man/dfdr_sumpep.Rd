@@ -14,10 +14,10 @@ dfdr_sumpep(x, alphas)
 \value{
 A \link[tibble:tibble]{tibble} with one row per \code{alpha}. Columns include:
 \describe{
-\item{alpha}{The threshold.}
-\item{n_targets}{Number of accepted targets (\code{!is_decoy} and \code{q <= alpha}).}
-\item{sum_PEP}{Sum of PEP values among accepted targets (expected false targets).}
-\item{mean_PEP}{Mean PEP among accepted targets.}
+  \item{alpha}{The threshold.}
+  \item{n_targets}{Number of accepted targets (\code{!is_decoy} and \code{q <= alpha}).}
+  \item{sum_PEP}{Sum of PEP values among accepted targets (expected false targets).}
+  \item{mean_PEP}{Mean PEP among accepted targets.}
 }
 }
 \description{

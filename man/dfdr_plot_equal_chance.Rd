@@ -6,7 +6,7 @@
 \usage{
 dfdr_plot_equal_chance(
   bands_tbl,
-  title = "Equal-chance plausibility: decoy fraction by q-band"
+  title = "Equal chance under paired competition: decoy fraction by q-band"
 )
 }
 \arguments{

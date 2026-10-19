@@ -28,14 +28,14 @@ diagnostics (e.g. \code{c("run")}).}
 \value{
 A list with components:
 \describe{
-\item{ecdf}{A \link[tibble:tibble]{tibble} with columns \code{stratum},
-\code{u}, \code{Fhat}, and \code{n}. There is one row per \code{u} value per
-stratum.}
-\item{summary}{A tibble with one row per stratum, including \code{n} (number
-of finite p-values), \code{max_inflation} (maximum of \code{Fhat(u)-u} for
-\code{u <= u_max}), and \code{auc_inflation} (area under the positive part of
-\code{Fhat(u)-u} on \eqn{[0,u_{\max}]}, normalised by \code{u_max}). Strata
-with \code{n < min_n} are reported with \code{NA} metrics and a \code{note}.}
+  \item{ecdf}{A \link[tibble:tibble]{tibble} with columns \code{stratum},
+  \code{u}, \code{Fhat}, and \code{n}. There is one row per \code{u} value per
+  stratum.}
+  \item{summary}{A tibble with one row per stratum, including \code{n} (number
+  of finite p-values), \code{max_inflation} (maximum of \code{Fhat(u)-u} for
+  \code{u <= u_max}), and \code{auc_inflation} (area under the positive part of
+  \code{Fhat(u)-u} on \eqn{[0,u_{\max}]}, normalised by \code{u_max}). Strata
+  with \code{n < min_n} are reported with \code{NA} metrics and a \code{note}.}
 }
 }
 \description{

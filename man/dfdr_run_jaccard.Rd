@@ -15,9 +15,9 @@ targets (\code{q <= alpha}).}
 \value{
 A \link[tibble:tibble]{tibble} with one row per run pair and columns:
 \describe{
-\item{run1}{Name/identifier of the first run.}
-\item{run2}{Name/identifier of the second run.}
-\item{jaccard}{Jaccard similarity between accepted target ID sets.}
+  \item{run1}{Name/identifier of the first run.}
+  \item{run2}{Name/identifier of the second run.}
+  \item{jaccard}{Jaccard similarity between accepted target ID sets.}
 }
 }
 \description{

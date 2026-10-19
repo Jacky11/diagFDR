@@ -12,7 +12,8 @@ diann_global_precursor(
   q_max_export = NA_real_,
   unit = "precursor",
   scope = "global",
-  q_source = q_col
+  q_source = q_col,
+  two_pass = NA
 )
 }
 \arguments{
@@ -31,6 +32,10 @@ diann_global_precursor(
 \item{scope}{Character. Scope metadata stored in the returned object.}
 
 \item{q_source}{Character. Label stored in metadata describing the q-value source.}
+
+\item{two_pass}{Logical or \code{NA}. \code{TRUE} for reports of a two-pass
+search (\code{--reanalyse}, match-between-runs); the equal-chance check is
+then reported as not evaluable. See \code{\link{as_dfdr_tbl}}.}
 }
 \value{
 A \code{dfdr_tbl} (tibble subclass) with one row per precursor and required
@@ -41,7 +46,15 @@ Metadata are stored in \code{attr(x, "meta")}.
 Constructs a precursor-level universe by aggregating a DIA-NN report table to
 one row per \code{Precursor.Id}. For each precursor, the minimum q-value is
 used (via \code{safe_min}) and \code{is_decoy} is set to \code{TRUE} if any row
-in the group is a decoy.
+in the group is a decoy. The smallest PEP across runs and the largest score
+are kept. A run-level PEP collapsed in this way is generally too small for the
+precursor-level unit; \code{\link{dfdr_ipe}} detects this.
+}
+\details{
+With \code{q_col = "Global.Q.Value"} this gives the experiment-wide list.
+With \code{q_col = "Q.Value"} it gives the minimum of the run-wise q-values
+(see \code{\link{diann_global_minrunq}}), which is not an experiment-wide
+q-value: its recomputed decoy ratio exceeds the threshold.
 }
 \examples{
 library(tibble)

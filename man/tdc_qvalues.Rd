@@ -14,7 +14,7 @@ tdc_qvalues(score, is_decoy, add_decoy = 1L)
 \item{add_decoy}{Integer scalar. FDR hat = (D + add_decoy) / T.}
 }
 \value{
-Numeric vector of q-values in \verb{[0,1]}.
+Numeric vector of q-values in `[0,1]`.
 }
 \description{
 Computes FDR estimates along the score-sorted list and returns monotone q-values:

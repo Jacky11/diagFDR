@@ -25,6 +25,7 @@ dfdr_run_all(
   pep_rel_tdc_add_decoy = 0L,
   compute_pseudo_pvalues = TRUE,
   pseudo_pvalue_method = "decoy_ecdf",
+  pseudo_pvalue_score = c("score", "pep"),
   p_u_grid = c(seq(0.001, 0.1, by = 0.001), seq(0.11, 1, by = 0.01)),
   p_u_max = 0.1,
   p_stratify = NULL,
@@ -74,10 +75,23 @@ dfdr_run_all(
 \item{pep_rel_tdc_add_decoy}{Integer. Additive correction used in D/T for TDC-style reliability.}
 
 \item{compute_pseudo_pvalues}{Logical. If \code{TRUE}, attempt to compute pseudo-p-values
-when \code{p} is missing.}
+when \code{p} is missing. This needs a \code{score} column (higher is better);
+a list without one is left without p-value diagnostics, with a warning, and the
+reason is recorded in its metadata (\code{p_source}) and in the report.
+DIA-NN 2.x reports carry no discriminant score (no \code{CScore}), so the
+DIA-NN builders return \code{score = NA} unless \code{score_col} names one.}
 
 \item{pseudo_pvalue_method}{Character. Method passed to \code{\link{score_to_pvalue}}
 (default \code{"decoy_ecdf"}).}
+
+\item{pseudo_pvalue_score}{Character. Score used for the pseudo-p-values:
+\code{"score"} (default) uses the \code{score} column only; \code{"pep"}
+falls back on \code{-pep} when no score is available. PEP is a monotone
+function of the discriminant score only within the model that produced it
+(e.g. one run), it is bounded and heavily tied near 0 and 1, and on lists
+collapsed across runs it is the smallest PEP of each unit; the resulting
+pseudo-p-values are therefore approximate and coarse, best read as a
+ranking-based diagnostic.}
 
 \item{p_u_grid}{Numeric vector in \eqn{(0,1]}. Grid for p-value ECDF calibration diagnostics.}
 
@@ -100,14 +114,18 @@ when \code{p} is missing.}
 \value{
 A list with components:
 \describe{
-\item{tables}{A named list of result tables (tibbles) for the computed diagnostics
-(e.g. \code{headline}, \code{stability}, \code{local_tail}, \code{elasticity},
-and optional PEP/p-value/BH-related tables).}
-\item{plots}{A named list of \link[ggplot2:ggplot]{ggplot} objects produced from
-the diagnostics.}
-\item{objects}{The input \code{xs}, possibly augmented with computed pseudo-p-values
-if \code{compute_pseudo_pvalues=TRUE}.}
-\item{params}{A list of parameter values used to compute the diagnostics.}
+  \item{tables}{A named list of result tables (tibbles) for the computed diagnostics
+  (e.g. \code{headline}, \code{stability}, \code{local_tail}, \code{elasticity},
+  and optional PEP/p-value/BH-related tables).}
+  \item{plots}{A named list of \link[ggplot2:ggplot]{ggplot} objects produced from
+  the diagnostics.}
+  \item{objects}{The input \code{xs}, possibly augmented with computed pseudo-p-values
+  if \code{compute_pseudo_pvalues=TRUE}.}
+  \item{params}{A list of parameter values used to compute the diagnostics.}
+  \item{interpretation}{Plain-language summaries used by the HTML report:
+  \code{p} (per list, from \code{\link{dfdr_p_interpretation}}), \code{pep}
+  (per list, from \code{\link{dfdr_pep_interpretation}}) and the underlying
+  \code{p_summary} and \code{pep_summary} objects.}
 }
 }
 \description{
@@ -117,14 +135,15 @@ of \code{dfdr_tbl} objects and returns both summary tables and plots.
 \details{
 Diagnostics include (depending on available columns):
 \itemize{
-\item Target/decoy headline diagnostics at \code{alpha_main} (counts, FDR estimate, stability proxies)
-\item Stability curves across \code{alphas}
-\item Local tail decoy support near each \code{alpha}
-\item Elasticity (Jaccard overlap under threshold perturbation)
-\item PEP reliability / IPE and PEP sanity summaries (if \code{pep} is present)
-\item Equal-chance by q-bands (always attempted; may be not applicable if q-range is truncated)
-\item (Pseudo-)p-value calibration and Storey \eqn{\pi_0(\lambda)} (if \code{p} is present or computed)
-\item BH diagnostics (if \code{p} is present)
+  \item Target/decoy headline diagnostics at \code{alpha_main} (counts, FDR estimate, stability proxies)
+  \item Stability curves across \code{alphas}
+  \item Local tail decoy support near each \code{alpha}
+  \item Elasticity (Jaccard overlap under threshold perturbation)
+  \item PEP reliability, IPE (target-decoy comparator, see \code{\link{dfdr_ipe}})
+    and PEP sanity summaries (if \code{pep} is present)
+  \item Equal-chance by q-bands (always attempted; may be not applicable if q-range is truncated)
+  \item (Pseudo-)p-value calibration and Storey \eqn{\pi_0(\lambda)} (if \code{p} is present or computed)
+  \item BH diagnostics (if \code{p} is present)
 }
 }
 \examples{

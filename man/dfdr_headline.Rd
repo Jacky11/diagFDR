@@ -26,6 +26,16 @@ and decoys at the threshold and additional sensitivity/stability summaries
 derived from perturbing the boundary decoy support (using \code{k_fixed} and
 \code{k_sqrt_mult}). The returned tibble is intended for reporting and for
 comparison across workflows.
+
+Column \code{FDR_hat} is the recomputed decoy ratio \eqn{D_\alpha/T_\alpha},
+an internal consistency check of the exported q-values, not an estimate of
+the realised error. Column \code{support_index} is the decoy-support index
+\eqn{D_\alpha^{-1/2}}; \code{CV_benchmark} is the FDP-CV benchmark
+\eqn{\sqrt{2}D_\alpha^{-1/2}}, an approximation to the coefficient of
+variation of the realised false discovery proportion under equal chance,
+independence, and accepted decoys standing for incorrect matches only, with
+\eqn{D_\alpha} and \eqn{T_\alpha} varying little across experiments
+(dependence between units and heavy-tailed null scores increase it).
 }
 \description{
 Computes headline counts at the acceptance threshold corresponding to

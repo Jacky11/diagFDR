@@ -33,7 +33,7 @@ for its side effect of creating an HTML report on disk.
 \description{
 Renders an HTML report that summarises key diagnostics and embeds plots
 contained in \code{diag$plots}. The report is intended for interactive review
-and verifiable reporting.
+and auditable reporting.
 }
 \details{
 This function requires the \pkg{rmarkdown} package (suggested dependency) and

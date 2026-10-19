@@ -17,13 +17,13 @@ dfdr_pep_reliability_tdc(x, breaks = seq(0, 0.5, by = 0.05), add_decoy = 0L)
 \value{
 A \link[tibble:tibble]{tibble} with one row per PEP bin, including:
 \describe{
-\item{bin}{Formatted bin label.}
-\item{n_target}{Number of targets in the bin.}
-\item{n_decoy}{Number of decoys in the bin.}
-\item{pep_mean_targets}{Mean PEP among targets in the bin.}
-\item{pep_mean_all}{Mean PEP among all entries in the bin.}
-\item{err_hat_target}{Estimated target error proxy \eqn{(D + add\_decoy)/T}, capped at 1.}
-\item{pep_bin_mid}{Midpoint of the PEP bin (useful for plotting).}
+  \item{bin}{Formatted bin label.}
+  \item{n_target}{Number of targets in the bin.}
+  \item{n_decoy}{Number of decoys in the bin.}
+  \item{pep_mean_targets}{Mean PEP among targets in the bin.}
+  \item{pep_mean_all}{Mean PEP among all entries in the bin.}
+  \item{err_hat_target}{Estimated target error proxy \eqn{(D + add\_decoy)/T}, capped at 1.}
+  \item{pep_bin_mid}{Midpoint of the PEP bin (useful for plotting).}
 }
 }
 \description{

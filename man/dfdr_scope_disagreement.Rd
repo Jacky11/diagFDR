@@ -32,10 +32,10 @@ between \code{x1} and \code{x2}.}
 \value{
 A \link[tibble:tibble]{tibble} with one row per \code{alpha} and columns:
 \describe{
-\item{alpha}{The threshold.}
-\item{label1,label2}{The labels identifying the two inputs.}
-\item{n1,n2}{Numbers of accepted target IDs in \code{x1} and \code{x2} at \code{alpha}.}
-\item{jaccard}{Jaccard similarity between the two accepted target ID sets.}
+  \item{alpha}{The threshold.}
+  \item{label1,label2}{The labels identifying the two inputs.}
+  \item{n1,n2}{Numbers of accepted target IDs in \code{x1} and \code{x2} at \code{alpha}.}
+  \item{jaccard}{Jaccard similarity between the two accepted target ID sets.}
 }
 }
 \description{

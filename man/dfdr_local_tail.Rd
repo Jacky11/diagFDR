@@ -26,14 +26,14 @@ dfdr_local_tail(
 \value{
 A \link[tibble:tibble]{tibble} with one row per \code{alpha}. Columns include:
 \describe{
-\item{alpha}{The threshold.}
-\item{delta}{The effective window width used (\eqn{\rho\alpha} or capped).}
-\item{n_win}{Number of entries with \code{q} in the window.}
-\item{D_alpha_win}{Number of decoys in the window.}
-\item{decoy_frac_win}{Decoy fraction in the window (\code{D_alpha_win/n_win}).}
-\item{upper_used}{Upper endpoint actually used for the window.}
-\item{truncated}{Logical indicating whether the requested window was truncated
-(or dropped) due to export limits.}
+  \item{alpha}{The threshold.}
+  \item{delta}{The effective window width used (\eqn{w\alpha}, with \eqn{w} = \code{win_rel}, or capped).}
+  \item{n_win}{Number of entries with \code{q} in the window.}
+  \item{D_alpha_win}{Number of decoys in the window.}
+  \item{decoy_frac_win}{Decoy fraction in the window (\code{D_alpha_win/n_win}).}
+  \item{upper_used}{Upper endpoint actually used for the window.}
+  \item{truncated}{Logical indicating whether the requested window was truncated
+    (or dropped) due to export limits.}
 }
 This table is used to assess boundary support: very small \code{n_win} or
 \code{D_alpha_win} indicates an unstable/poorly-supported cutoff.

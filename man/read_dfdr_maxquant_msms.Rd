@@ -19,9 +19,9 @@ read_dfdr_maxquant_msms(
 
 \item{pep_mode}{Character. How to handle the \code{PEP} column:
 \describe{
-\item{\code{"drop"}}{Set \code{pep = NA} for all rows.}
-\item{\code{"sanitize"}}{Keep finite PEP in \code{[0,1]}; set other finite values to \code{NA} and warn.}
-\item{\code{"strict"}}{Error if any finite PEP is outside \code{[0,1]}.}
+  \item{\code{"drop"}}{Set \code{pep = NA} for all rows.}
+  \item{\code{"sanitize"}}{Keep finite PEP in \code{[0,1]}; set other finite values to \code{NA} and warn.}
+  \item{\code{"strict"}}{Error if any finite PEP is outside \code{[0,1]}.}
 }}
 
 \item{exclude_contaminants}{Logical. If \code{TRUE} and a
@@ -53,11 +53,11 @@ indicator (\code{"+"} for decoy).
 \details{
 Required columns in \code{msms.txt}:
 \itemize{
-\item \code{id} (unique PSM identifier; numeric or character)
-\item \code{Raw file} (run name)
-\item \code{Reverse} (MaxQuant decoy indicator; \code{"+"} for decoy; blank/NA for target)
-\item \code{Score} (MaxQuant score; higher is better)
-\item \code{PEP} (posterior error probability; optional in practice, see \code{pep_mode})
+  \item \code{id} (unique PSM identifier; numeric or character)
+  \item \code{Raw file} (run name)
+  \item \code{Reverse} (MaxQuant decoy indicator; \code{"+"} for decoy; blank/NA for target)
+  \item \code{Score} (MaxQuant score; higher is better)
+  \item \code{PEP} (posterior error probability; optional in practice, see \code{pep_mode})
 }
 
 The function computes q-values by target-decoy counting (TDC) using \code{Score}

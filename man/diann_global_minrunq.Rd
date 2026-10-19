@@ -13,7 +13,8 @@ diann_global_minrunq(
   q_max_export = NA_real_,
   unit = "precursor",
   scope = "aggregated",
-  q_source = paste0("min_run(", q_col, ")")
+  q_source = paste0("min_run(", q_col, ")"),
+  two_pass = NA
 )
 }
 \arguments{
@@ -36,6 +37,10 @@ stored as metadata for truncation-aware diagnostics.}
 \item{scope}{Character. Scope metadata stored in the returned object.}
 
 \item{q_source}{Character. Source label stored in metadata.}
+
+\item{two_pass}{Logical or \code{NA}. \code{TRUE} for reports of a two-pass
+search (\code{--reanalyse}, match-between-runs); the equal-chance check is
+then reported as not evaluable. See \code{\link{as_dfdr_tbl}}.}
 }
 \value{
 A \code{dfdr_tbl} with one row per precursor, where \code{q} equals the minimum

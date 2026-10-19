@@ -15,7 +15,7 @@ compete_max_score(df, keys, score_col)
 }
 \value{
 A data frame with at most one row per unique combination of \code{keys},
-retaining the row with the maximum score (ties broken by taking a single row).
+  retaining the row with the maximum score (ties broken by taking a single row).
 }
 \description{
 Compete winners by maximum score within keys (one per run+spectrum_id)

@@ -19,12 +19,12 @@ score_to_pvalue(
 
 \item{method}{Character. Conversion method:
 \describe{
-\item{\code{"mascot"}}{Treat \code{score} as Mascot score \eqn{S=-10\log_{10}(p)}; returns \eqn{p=10^{-S/10}}.}
-\item{\code{"neglog10p"}}{Generic \eqn{S=-10\log_{10}(p)}; same transform as \code{"mascot"}.}
-\item{\code{"evalue"}}{Treat \code{score} as an expectation/e-value-like quantity and return it as a p-like value.}
-\item{\code{"rank"}}{Rank-based pseudo-p-values \eqn{p_i=\mathrm{rank}(-s_i)/(n+1)}.}
-\item{\code{"decoy_ecdf"}}{Decoy-ECDF pseudo-p-values from the empirical right-tail of decoy scores;
-requires \code{is_decoy}.}
+  \item{\code{"mascot"}}{Treat \code{score} as Mascot score \eqn{S=-10\log_{10}(p)}; returns \eqn{p=10^{-S/10}}.}
+  \item{\code{"neglog10p"}}{Generic \eqn{S=-10\log_{10}(p)}; same transform as \code{"mascot"}.}
+  \item{\code{"evalue"}}{Treat \code{score} as an expectation/e-value-like quantity and return it as a p-like value.}
+  \item{\code{"rank"}}{Rank-based pseudo-p-values \eqn{p_i=\mathrm{rank}(-s_i)/(n+1)}.}
+  \item{\code{"decoy_ecdf"}}{Decoy-ECDF pseudo-p-values from the empirical right-tail of decoy scores;
+    requires \code{is_decoy}.}
 }}
 
 \item{is_decoy}{Optional logical vector (same length as \code{score}). Required for
@@ -46,8 +46,8 @@ when decoys provide a good null sample.
 \description{
 Converts identification scores to:
 \itemize{
-\item \strong{p-values} when the score has a known p-value definition (e.g. Mascot score),
-\item \strong{pseudo-p-values} when no such definition exists (e.g. MaxQuant/Andromeda scores).
+  \item \strong{p-values} when the score has a known p-value definition (e.g. Mascot score),
+  \item \strong{pseudo-p-values} when no such definition exists (e.g. MaxQuant/Andromeda scores).
 }
 }
 \details{

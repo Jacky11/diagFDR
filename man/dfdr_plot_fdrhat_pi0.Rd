@@ -37,10 +37,10 @@ to avoid division by zero at tiny \code{t}.}
 \value{
 A list with components:
 \describe{
-\item{plot}{A \link[ggplot2:ggplot]{ggplot} object.}
-\item{data}{A \link[tibble:tibble]{tibble} with columns \code{t}, \code{R}, and \code{fdr_hat}.}
-\item{pi0_hat}{Numeric scalar \eqn{\hat\pi_0}.}
-\item{m}{Integer. Number of finite p-values used.}
+  \item{plot}{A \link[ggplot2:ggplot]{ggplot} object.}
+  \item{data}{A \link[tibble:tibble]{tibble} with columns \code{t}, \code{R}, and \code{fdr_hat}.}
+  \item{pi0_hat}{Numeric scalar \eqn{\hat\pi_0}.}
+  \item{m}{Integer. Number of finite p-values used.}
 }
 }
 \description{

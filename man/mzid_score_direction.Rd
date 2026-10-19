@@ -12,10 +12,10 @@ mzid_score_direction(
 \arguments{
 \item{score_accession}{Character. PSI-MS accession for the score term.}
 
-\item{score_direction}{One of \code{"auto"}, \code{"lower_better"}, \code{"higher_better"}.}
+\item{score_direction}{One of `"auto"`, `"lower_better"`, `"higher_better"`.}
 }
 \value{
-\code{"lower_better"} or \code{"higher_better"}.
+`"lower_better"` or `"higher_better"`.
 }
 \description{
 Determine score direction (internal)

@@ -34,10 +34,10 @@ If \code{return_data = FALSE} (default), returns a
 
 If \code{return_data = TRUE}, returns a list with components:
 \describe{
-\item{plot}{A ggplot object.}
-\item{pi0}{Named numeric vector of \eqn{\pi_0} estimates (one per method).}
-\item{data}{A list with \code{main} (ECDF data) and \code{ref} (reference
-curve data).}
+  \item{plot}{A ggplot object.}
+  \item{pi0}{Named numeric vector of \eqn{\pi_0} estimates (one per method).}
+  \item{data}{A list with \code{main} (ECDF data) and \code{ref} (reference
+  curve data).}
 }
 }
 \description{

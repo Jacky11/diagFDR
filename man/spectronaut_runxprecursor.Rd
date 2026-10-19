@@ -60,8 +60,9 @@ is suitable for run-wise FDR diagnostics because each row corresponds to a
 If Spectronaut exports \code{NaN} q-values for decoys (common), the function can
 optionally recompute q-values from scores per run using target-decoy competition.
 
+
 When Spectronaut exports decoys with \code{NaN} q-values, recomputing q-values
-from scores is performed \emph{per run} to respect the run-wise hypothesis structure
+from scores is performed *per run* to respect the run-wise hypothesis structure
 and to avoid pooling scores across runs that may not be comparable.
 }
 \examples{

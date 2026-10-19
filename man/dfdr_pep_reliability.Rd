@@ -2,7 +2,7 @@
 % Please edit documentation in R/diag_calibration.R
 \name{dfdr_pep_reliability}
 \alias{dfdr_pep_reliability}
-\title{Posterior Error Probability (PEP) reliability and internal PEP calibration error (IPE)}
+\title{PEP reliability against the pooled decoy fraction}
 \usage{
 dfdr_pep_reliability(x, binwidth = 0.05, n_min = 200, pep_max = 0.5)
 }
@@ -19,20 +19,25 @@ dfdr_pep_reliability(x, binwidth = 0.05, n_min = 200, pep_max = 0.5)
 \value{
 A list with components:
 \describe{
-\item{bins}{A \link[tibble:tibble]{tibble} with one row per PEP bin and columns
-\code{pep_mean} (mean predicted PEP), \code{decoy_rate} (observed decoy
-fraction), and \code{n} (bin size).}
-\item{IPE}{Numeric scalar. The internal PEP calibration error (IPE), computed
-as a weighted mean absolute deviation between \code{pep_mean} and
-\code{decoy_rate} across eligible bins (\code{n >= n_min} and
-\code{pep_mean <= pep_max}). \code{NA} if no eligible bins exist.}
-\item{params}{A list of parameters used (\code{binwidth}, \code{n_min},
-\code{pep_max}).}
+  \item{bins}{A \link[tibble:tibble]{tibble} with one row per PEP bin and columns
+  \code{pep_mean} (mean predicted PEP), \code{decoy_rate} (observed decoy
+  fraction), and \code{n} (bin size).}
+  \item{IPE}{Numeric scalar. Pooled-comparator calibration error: weighted
+  mean absolute deviation between \code{pep_mean} and \code{decoy_rate}
+  across eligible bins (\code{n >= n_min} and \code{pep_mean <= pep_max}).
+  \code{NA} if no eligible bins exist. See \code{\link{dfdr_ipe}} for the
+  IPE used in the headline table.}
+  \item{params}{A list of parameters used (\code{binwidth}, \code{n_min},
+  \code{pep_max}).}
 }
 }
 \description{
-Bins identifications by predicted PEP and compares mean predicted PEP to the
-observed decoy fraction within each bin (internal target-decoy consistency check).
+Bins identifications (targets and decoys together) by predicted PEP and
+compares the mean predicted PEP with the observed decoy fraction
+\eqn{D_b/(T_b+D_b)} within each bin. This \emph{pooled} comparator is kept
+as a secondary summary; the internal PEP
+calibration error (IPE) reported in the headline table is computed by
+\code{\link{dfdr_ipe}} with the target-decoy comparator \eqn{D_b/T_b}.
 }
 \examples{
 library(tibble)

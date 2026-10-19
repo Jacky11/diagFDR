@@ -14,7 +14,8 @@ diann_runxprecursor(
   id_mode = c("id", "runxid"),
   unit = "runxprecursor",
   scope = "runwise",
-  q_source = q_col
+  q_source = q_col,
+  two_pass = NA
 )
 }
 \arguments{
@@ -41,6 +42,10 @@ function attempts to detect one of \code{"Run"}, \code{"File.Name"}, or
 \item{scope}{Character. Scope metadata stored in the returned object.}
 
 \item{q_source}{Character. Label stored in metadata describing the q-value source.}
+
+\item{two_pass}{Logical or \code{NA}. \code{TRUE} for reports of a two-pass
+search (\code{--reanalyse}, match-between-runs); the equal-chance check is
+then reported as not evaluable. See \code{\link{as_dfdr_tbl}}.}
 }
 \value{
 A \code{dfdr_tbl} with one row per run-by-precursor unit. The returned table

@@ -13,7 +13,7 @@
 }
 \value{
 Numeric scalar BH threshold \eqn{t_\alpha}, or \code{NA_real_} if no
-rejection threshold exists.
+  rejection threshold exists.
 }
 \description{
 Computes the BH cutoff \eqn{t_\alpha} for a vector of p-values \code{p} at level

@@ -17,11 +17,11 @@ dfdr_elasticity(x, alphas, eps = 0.2)
 \value{
 A \link[tibble:tibble]{tibble} with one row per \code{alpha}. Columns include:
 \describe{
-\item{alpha}{The baseline threshold.}
-\item{eps}{The relative perturbation.}
-\item{n1}{Number of accepted targets at \code{alpha}.}
-\item{n2}{Number of accepted targets at \code{(1+eps)*alpha}.}
-\item{jaccard}{Jaccard overlap between the two accepted target sets.}
+  \item{alpha}{The baseline threshold.}
+  \item{eps}{The relative perturbation.}
+  \item{n1}{Number of accepted targets at \code{alpha}.}
+  \item{n2}{Number of accepted targets at \code{(1+eps)*alpha}.}
+  \item{jaccard}{Jaccard overlap between the two accepted target sets.}
 }
 }
 \description{

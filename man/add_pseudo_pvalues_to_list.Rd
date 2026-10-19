@@ -4,16 +4,27 @@
 \alias{add_pseudo_pvalues_to_list}
 \title{Add pseudo p-values to \code{dfdr_tbl} objects that have scores but no p-values}
 \usage{
-add_pseudo_pvalues_to_list(xs, method = "decoy_ecdf")
+add_pseudo_pvalues_to_list(
+  xs,
+  method = "decoy_ecdf",
+  score_source = c("score", "pep")
+)
 }
 \arguments{
 \item{xs}{Named list of \code{dfdr_tbl} objects.}
 
 \item{method}{Character. Method passed to \code{\link{score_to_pvalue}} (default \code{"decoy_ecdf"}).}
+
+\item{score_source}{Character. \code{"score"} (default) uses the \code{score}
+column only. \code{"pep"} uses \code{score} when it is available and
+otherwise \code{-pep} as a monotone surrogate score (see
+\code{\link{dfdr_run_all}} for the caveats).}
 }
 \value{
 A list of \code{dfdr_tbl} objects of the same length/order as \code{xs}, with a
-\code{p} column added where applicable.
+\code{p} column added where applicable. When no p-value can be computed, the
+list is returned unchanged, its metadata field \code{p_source} records why
+and a warning names the list.
 }
 \description{
 Iterates over a named list of \code{dfdr_tbl} objects and, where a finite \code{p}

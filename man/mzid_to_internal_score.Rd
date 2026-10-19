@@ -9,7 +9,7 @@ mzid_to_internal_score(score_value, score_direction, score_accession)
 \arguments{
 \item{score_value}{Numeric vector. Raw score values.}
 
-\item{score_direction}{Character. \code{"lower_better"} or \code{"higher_better"}.}
+\item{score_direction}{Character. `"lower_better"` or `"higher_better"`.}
 
 \item{score_accession}{Character. Score accession (used for special handling).}
 }

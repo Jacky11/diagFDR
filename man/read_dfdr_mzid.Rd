@@ -49,12 +49,12 @@ if \code{PeptideEvidence@isDecoy} is not informative.}
 A \code{dfdr_tbl} (tibble subclass) with one row per extracted PSM (at the requested
 \code{rank}). The returned object contains:
 \itemize{
-\item \code{id}: a PSM identifier derived from run and spectrum ID (\code{"run||spectrumID"});
-\item \code{is_decoy}: logical target/decoy label;
-\item \code{score}: an internal score where larger values mean better matches;
-\item \code{q}: reconstructed monotone q-values from TDC using \code{score} and \code{is_decoy};
-\item \code{pep}: \code{NA} (mzIdentML PEPs are not parsed here);
-\item \code{run}: run identifier when available.
+  \item \code{id}: a PSM identifier derived from run and spectrum ID (\code{"run||spectrumID"});
+  \item \code{is_decoy}: logical target/decoy label;
+  \item \code{score}: an internal score where larger values mean better matches;
+  \item \code{q}: reconstructed monotone q-values from TDC using \code{score} and \code{is_decoy};
+  \item \code{pep}: \code{NA} (mzIdentML PEPs are not parsed here);
+  \item \code{run}: run identifier when available.
 }
 Metadata are stored in \code{attr(x, "meta")} (including \code{unit}, \code{scope},
 \code{q_source}, and \code{provenance}).

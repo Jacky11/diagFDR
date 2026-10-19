@@ -22,13 +22,13 @@ Only finite \code{p}-values are used.}
 \value{
 A \link[tibble:tibble]{tibble} with one row per element of \code{alphas}. Columns include:
 \describe{
-\item{alpha}{The nominal BH level.}
-\item{alpha_perturbed}{The perturbed level \code{min((1+eps)*alpha, 1)}.}
-\item{t_alpha}{BH rejection threshold at \code{alpha} (NA if no rejections).}
-\item{t_alpha_perturbed}{BH rejection threshold at \code{alpha_perturbed} (NA if none).}
-\item{R_alpha}{Number of discoveries at \code{alpha}.}
-\item{R_alpha_perturbed}{Number of discoveries at \code{alpha_perturbed}.}
-\item{jaccard}{Jaccard similarity between the two discovery ID sets.}
+  \item{alpha}{The nominal BH level.}
+  \item{alpha_perturbed}{The perturbed level \code{min((1+eps)*alpha, 1)}.}
+  \item{t_alpha}{BH rejection threshold at \code{alpha} (NA if no rejections).}
+  \item{t_alpha_perturbed}{BH rejection threshold at \code{alpha_perturbed} (NA if none).}
+  \item{R_alpha}{Number of discoveries at \code{alpha}.}
+  \item{R_alpha_perturbed}{Number of discoveries at \code{alpha_perturbed}.}
+  \item{jaccard}{Jaccard similarity between the two discovery ID sets.}
 }
 This output is intended to quantify how sensitive BH discoveries are to small
 changes in the chosen FDR level.
