@@ -239,7 +239,7 @@ dfdr_render_report(diag_p, out_dir = "diagFDR_maxquant_out_with_p")
 - **Universe / scope**: `read_dfdr_maxquant_msms()` produces a PSM-level universe; q-values
   are reconstructed by score-based TDC. Protein-level claims require additional inference.
 
-- **Stability**: `D_alpha`, `CV_hat`, and `D_alpha_win` quantify whether the operating cutoff
+- **Stability**: `D_alpha`, `support_index`, and `D_alpha_win` quantify whether the operating cutoff
   is well supported by decoys. Very strict cutoffs can yield sparse decoy tails.
 
 - **Calibration**: equal-chance diagnostics are internal plausibility checks under the target–decoy model.

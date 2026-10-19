@@ -34,6 +34,12 @@ To enable all diagnostics, export:
 - decoys: `--report-decoys`
 - a permissive export ceiling: `--qvalue 0.5` (or higher)
 
+If the search used a second pass (`--reanalyse`, match-between-runs), pass
+`two_pass = TRUE` to the `diann_*()` builders below: the equal-chance check is then
+reported as not evaluable, because the second pass searches a library reduced to
+first-pass identifications. The IPE of the headline table compares the mean PEP of
+targets with the decoy-derived reference `D_b/T_b` in each PEP bin (`dfdr_ipe()`).
+
 The q-value ceiling matters because some diagnostics operate in low-confidence regions
 (e.g. equal-chance plausibility checks, or local-window support around cutoffs).
 
@@ -122,7 +128,8 @@ x_global_gq <- diann_global_precursor(
   q_max_export = 0.5,
   unit = "precursor",
   scope = "global",
-  q_source = "Global.Q.Value"
+  q_source = "Global.Q.Value",
+  two_pass = TRUE   # search run with --reanalyse (MBR); FALSE for a single pass
 )
 
 # (B) Run×precursor universe using run-wise Q.Value
@@ -134,7 +141,8 @@ x_runx <- diann_runxprecursor(
   id_mode = "runxid",
   unit = "runxprecursor",
   scope = "runwise",
-  q_source = "Q.Value"
+  q_source = "Q.Value",
+  two_pass = TRUE   # search run with --reanalyse (MBR); FALSE for a single pass
 )
 
 # (C) Scope misuse comparator: min run-wise q over runs per precursor (anti-pattern)
@@ -145,13 +153,15 @@ x_minrun <- diann_global_minrunq(
   q_max_export = 0.5,
   unit = "precursor",
   scope = "aggregated",
-  q_source = "min_run(Q.Value)"
+  q_source = "min_run(Q.Value)",
+  two_pass = TRUE   # search run with --reanalyse (MBR); FALSE for a single pass
 )
 
 diag <- dfdr_run_all(
   xs = list(global = x_global_gq, runx = x_runx, minrun = x_minrun),
   alpha_main = 0.01,
-  compute_pseudo_pvalues = TRUE  # <-- This adds p-value diagnostics
+  compute_pseudo_pvalues = TRUE,   # p-value diagnostics (need a score) ...
+  pseudo_pvalue_score = "pep"      # ... DIA-NN 2.x reports have no CScore: use -PEP (approximate)
 )
 
 # Compare accepted lists across scopes (Jaccard overlap across alpha)
@@ -177,7 +187,7 @@ dfdr_render_report(diag, out_dir = "diagFDR_diann_out")
   aggregating run-wise q-values (e.g., taking `min(Q.Value)` across runs) is generally anti-conservative.
 
 - **Stability**: stringent cutoffs can enter a *granular regime* where only a few decoys
-  support the boundary. Inspect `D_alpha`, `CV_hat`, and the local boundary support `D_alpha_win`
+  support the boundary. Inspect `D_alpha`, the decoy-support index `support_index`, and the local boundary support `D_alpha_win`
   before making strong claims at very small alpha.
 
 - **Equal-chance diagnostics** (decoy fractions in low-confidence q-bands) and **PEP reliability**

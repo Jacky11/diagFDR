@@ -153,7 +153,7 @@ dfdr_render_report(diag, out_dir = "diagFDR_mokapot_out")
 
 - `D_alpha` (tail support) and `D_alpha_win` (local boundary support) quantify how well the
   cutoff is supported by decoys. Very strict thresholds can yield sparse decoy tails and thus
-  unstable operating points (large `CV_hat`).
+  unstable operating points (large `support_index`).
 
 - `S_alpha(eps)` (elasticity) captures list sensitivity to small threshold perturbations.
   Low Jaccard overlap indicates that accepted IDs are sensitive to the chosen cutoff.
