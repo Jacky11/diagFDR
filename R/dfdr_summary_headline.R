@@ -56,6 +56,7 @@ dfdr_summary_headline <- function(diag) {
   if (is.data.frame(lt) && nrow(lt) > 0 && is.finite(alpha_main)) {
     lt_at <- dplyr::filter(lt, alpha == alpha_main) |>
       dplyr::select(dplyr::any_of(c("list","D_alpha_win","n_win","decoy_frac_win","delta","upper_used","truncated")))
+    lt_at <- lt_at[, c("list", setdiff(names(lt_at), names(out))), drop = FALSE]
     out <- dplyr::left_join(out, lt_at, by = "list")
   }
 
@@ -66,23 +67,25 @@ dfdr_summary_headline <- function(diag) {
     # Keep the key columns you showed:
     keep_ec <- intersect(names(ec), c("list","low_lo","low_hi","N_test","pi_D_hat","effect_abs",
                                       "ci95_lo","ci95_hi","p_value_binom","pass_minN","qmax_export"))
+    keep_ec <- c("list", setdiff(keep_ec, c("list", names(out))))
     if ("list" %in% keep_ec) out <- dplyr::left_join(out, ec[, keep_ec, drop = FALSE], by = "list")
   }
 
   # ---- IPE (if present)
   pep_ipe <- diag$tables$pep_IPE
   if (is.data.frame(pep_ipe) && nrow(pep_ipe) > 0) {
-    out <- dplyr::left_join(out, pep_ipe, by = "list")
+    add <- c("list", setdiff(names(pep_ipe), names(out)))
+    if (length(add) > 1) out <- dplyr::left_join(out, pep_ipe[, add, drop = FALSE], by = "list")
   }
 
   # Keep a stable column order (adjust as you like)
   preferred <- c(
     "list","alpha",
-    "T_alpha","D_alpha","FDR_hat","CV_hat",
+    "T_alpha","D_alpha","FDR_hat","support_index","CV_benchmark",
     "D_alpha_win","n_win","decoy_frac_win","truncated",
     "FDR_minus1","FDR_plus1","FDR_minus2sqrtD","FDR_plus2sqrtD",
     "pi_D_hat","effect_abs","ci95_lo","ci95_hi","p_value_binom","pass_minN",
-    "IPE"
+    "IPE","IPE_bins","IPE_pooled","eq_evaluable","eq_reason"
   )
   out |>
     dplyr::select(dplyr::any_of(preferred), dplyr::everything()) |>

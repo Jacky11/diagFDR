@@ -72,6 +72,11 @@ validate_dfdr_tbl <- function(x) {
 #' @param p_source Optional character describing where \code{p} came from.
 #' @param provenance Named list carrying provenance information (tool, version,
 #'   parameters, command, etc.).
+#' @param two_pass Logical or \code{NA}. Set to \code{TRUE} when the export comes
+#'   from a two-pass search (e.g. DIA-NN \code{--reanalyse}, or any search whose
+#'   second pass uses a library reduced to first-pass identifications). The
+#'   equal-chance check is then reported as not evaluable, because the
+#'   low-confidence region is conditioned by the first pass.
 #'
 #' @return
 #' An S3 object of class \code{dfdr_tbl} that inherits from
@@ -80,8 +85,8 @@ validate_dfdr_tbl <- function(x) {
 #'   \item contains the validated input data with \code{is_decoy} coerced to
 #'   logical (\code{TRUE}/\code{FALSE});
 #'   \item carries metadata in \code{attr(x, "meta")} with entries \code{unit},
-#'   \code{scope}, \code{q_source}, \code{q_max_export}, \code{p_source}, and
-#'   \code{provenance}.
+#'   \code{scope}, \code{q_source}, \code{q_max_export}, \code{p_source},
+#'   \code{two_pass} and \code{provenance}.
 #' }
 #'
 #' @examples
@@ -114,7 +119,8 @@ as_dfdr_tbl <- function(x,
                         q_source = NA_character_,
                         q_max_export = NA_real_,
                         p_source = NA_character_,
-                        provenance = list()) {
+                        provenance = list(),
+                        two_pass = NA) {
   x <- tibble::as_tibble(x)
 
   if (!"id" %in% names(x)) rlang::abort("Missing required column: id")
@@ -144,6 +150,7 @@ as_dfdr_tbl <- function(x,
     q_source = q_source,
     q_max_export = q_max_export,
     p_source = p_source,
+    two_pass = two_pass,
     provenance = provenance
   )
   class(x) <- c("dfdr_tbl", class(x))
@@ -185,6 +192,7 @@ print.dfdr_tbl <- function(x, ...) {
   if (!is.null(meta$p_source) && !is.na(meta$p_source)) {
     cat("  p_from:  ", meta$p_source, "\n", sep = "")
   }
+  if (isTRUE(meta$two_pass)) cat("  two-pass export (equal chance not evaluable)\n")
   cat("  n:       ", nrow(x), "\n", sep = "")
   NextMethod()
 }

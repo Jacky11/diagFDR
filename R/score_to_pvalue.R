@@ -129,36 +129,68 @@ score_to_pvalue <- function(score,
 #'
 #' @param xs Named list of \code{dfdr_tbl} objects.
 #' @param method Character. Method passed to \code{\link{score_to_pvalue}} (default \code{"decoy_ecdf"}).
+#' @param score_source Character. \code{"score"} (default) uses the \code{score}
+#'   column only. \code{"pep"} uses \code{score} when it is available and
+#'   otherwise \code{-pep} as a monotone surrogate score (see
+#'   \code{\link{dfdr_run_all}} for the caveats).
 #'
 #' @return
 #' A list of \code{dfdr_tbl} objects of the same length/order as \code{xs}, with a
-#' \code{p} column added where applicable.
+#' \code{p} column added where applicable. When no p-value can be computed, the
+#' list is returned unchanged, its metadata field \code{p_source} records why
+#' and a warning names the list.
 #'
 #' @keywords internal
-add_pseudo_pvalues_to_list <- function(xs, method = "decoy_ecdf") {
-  purrr::map(xs, function(x) {
-    # Skip if already has p-values
+add_pseudo_pvalues_to_list <- function(xs, method = "decoy_ecdf",
+                                       score_source = c("score", "pep")) {
+  score_source <- match.arg(score_source)
+  out <- purrr::imap(xs, function(x, nm) {
+    meta <- attr(x, "meta") %||% list()
+
+    # Keep p-values that are already there
     if ("p" %in% names(x) && any(is.finite(x$p))) {
       return(x)
     }
 
-    # Skip if no score column
-    if (!"score" %in% names(x) || all(is.na(x$score))) {
+    has_score <- "score" %in% names(x) && any(is.finite(x$score))
+    has_pep <- "pep" %in% names(x) && any(is.finite(x$pep))
+
+    if (has_score) {
+      s <- x$score
+      src <- sprintf("score_to_pvalue(score, method='%s')", method)
+    } else if (score_source == "pep" && has_pep) {
+      s <- -x$pep
+      src <- sprintf("score_to_pvalue(-PEP, method='%s'; PEP used as surrogate score)", method)
+    } else {
+      why <- if (score_source == "pep") "no score and no PEP column" else "no score column"
+      meta$p_source <- sprintf("not computed (%s)", why)
+      attr(x, "meta") <- meta
+      rlang::warn(sprintf(paste0(
+        "List '%s': pseudo-p-values not computed (%s). ",
+        "Pass `score_col` to the import function if the export has a discriminant score ",
+        "(DIA-NN 2.x reports have no CScore column), or use ",
+        "`pseudo_pvalue_score = \"pep\"` in dfdr_run_all() to use -PEP as a surrogate score."),
+        nm, why))
       return(x)
     }
 
-    # Compute pseudo p-values
-    x$p <- score_to_pvalue(
-      score = x$score,
-      method = method,
-      is_decoy = x$is_decoy
-    )
+    p <- tryCatch(
+      score_to_pvalue(score = s, method = method, is_decoy = x$is_decoy),
+      error = function(e) {
+        rlang::warn(sprintf("List '%s': pseudo-p-values not computed (%s).", nm, conditionMessage(e)))
+        NULL
+      })
+    if (is.null(p)) {
+      meta$p_source <- "not computed (score_to_pvalue() failed)"
+      attr(x, "meta") <- meta
+      return(x)
+    }
 
-    # Update metadata
-    meta <- attr(x, "meta") %||% list()
-    meta$p_source <- sprintf("score_to_pvalue(method='%s')", method)
+    x$p <- p
+    meta$p_source <- src
     attr(x, "meta") <- meta
-
     x
   })
+  names(out) <- names(xs)
+  out
 }

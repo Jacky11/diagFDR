@@ -1,8 +1,12 @@
 
-#' Posterior Error Probability (PEP) reliability and internal PEP calibration error (IPE)
+#' PEP reliability against the pooled decoy fraction
 #'
-#' Bins identifications by predicted PEP and compares mean predicted PEP to the
-#' observed decoy fraction within each bin (internal target-decoy consistency check).
+#' Bins identifications (targets and decoys together) by predicted PEP and
+#' compares the mean predicted PEP with the observed decoy fraction
+#' \eqn{D_b/(T_b+D_b)} within each bin. This \emph{pooled} comparator is kept
+#' as a secondary summary; the internal PEP
+#' calibration error (IPE) reported in the headline table is computed by
+#' \code{\link{dfdr_ipe}} with the target-decoy comparator \eqn{D_b/T_b}.
 #'
 #' @param x A \code{dfdr_tbl} with a non-missing \code{pep} column.
 #' @param binwidth Numeric bin width for PEP binning (default 0.05).
@@ -16,10 +20,11 @@
 #'   \item{bins}{A \link[tibble:tibble]{tibble} with one row per PEP bin and columns
 #'   \code{pep_mean} (mean predicted PEP), \code{decoy_rate} (observed decoy
 #'   fraction), and \code{n} (bin size).}
-#'   \item{IPE}{Numeric scalar. The internal PEP calibration error (IPE), computed
-#'   as a weighted mean absolute deviation between \code{pep_mean} and
-#'   \code{decoy_rate} across eligible bins (\code{n >= n_min} and
-#'   \code{pep_mean <= pep_max}). \code{NA} if no eligible bins exist.}
+#'   \item{IPE}{Numeric scalar. Pooled-comparator calibration error: weighted
+#'   mean absolute deviation between \code{pep_mean} and \code{decoy_rate}
+#'   across eligible bins (\code{n >= n_min} and \code{pep_mean <= pep_max}).
+#'   \code{NA} if no eligible bins exist. See \code{\link{dfdr_ipe}} for the
+#'   IPE used in the headline table.}
 #'   \item{params}{A list of parameters used (\code{binwidth}, \code{n_min},
 #'   \code{pep_max}).}
 #' }
@@ -130,11 +135,14 @@ dfdr_sumpep <- function(x, alphas) {
   })
 }
 
-#' Equal-chance plausibility by q-value bands
+#' Equal chance under paired target-decoy competition, by q-value bands
 #'
 #' Computes decoy fractions in q-value bands and performs a pooled binomial test
 #' of whether the decoy fraction is near 0.5 in a mismatch-dominated region
-#' (specified by \code{low_conf}).
+#' (specified by \code{low_conf}). The check assumes paired 1:1 target-decoy
+#' competition, a single-pass export and an unconditioned low-confidence band:
+#' targets and decoys listed separately, or a second pass on a library reduced
+#' by a first pass, move the fraction away from 0.5 even with valid decoys.
 #'
 #' @param x An \code{dfdr_tbl}.
 #' @param breaks Numeric vector of q-value cutpoints used to form bands.
@@ -192,7 +200,7 @@ dfdr_equal_chance_qbands <- function(
   breaks_use <- breaks[breaks <= qmax + 1e-12]
   breaks_use <- unique(sort(breaks_use))
 
-  # --- NEW: graceful handling when not applicable ---
+    # --- not applicable (export ceiling below the band) ---
   if (length(breaks_use) < 2) {
     bands <- tibble::tibble(
       qbin = factor(),
@@ -408,9 +416,90 @@ dfdr_pep_reliability_tdc <- function(x,
     dplyr::mutate(
       bin = sprintf("(%.3g, %.3g]", .data$pep_lo, .data$pep_hi)
     ) |>
-    dplyr::select(.data$bin, .data$n_target, .data$n_decoy,
-                  .data$pep_mean_targets, .data$pep_mean_all,
-                  .data$err_hat_target, .data$pep_bin_mid)
+    dplyr::select(dplyr::all_of(c("bin", "n_target", "n_decoy",
+                  "pep_mean_targets", "pep_mean_all",
+                  "err_hat_target", "pep_bin_mid")))
 
   out
+}
+
+#' Internal PEP calibration error (IPE) with the target-decoy comparator
+#'
+#' Computes the IPE used in the headline table and in the diagFDR paper.
+#' Targets and decoys are binned by PEP; in each bin \eqn{b} the mean PEP of
+#' the targets, \eqn{\overline{PEP}_{b,T}}, is compared with the decoy-derived
+#' reference \eqn{\hat e_b = \min\{1, (D_b + a)/T_b\}}, which under equal
+#' chance and 1:1 competition estimates the fraction of incorrect targets in
+#' the bin. The IPE is the size-weighted mean absolute difference
+#' \deqn{IPE = \sum_b w_b |\overline{PEP}_{b,T} - \hat e_b|,\quad
+#' w_b = n_b / \sum_{b'} n_{b'},\quad n_b = T_b + D_b,}
+#' over bins with \eqn{\overline{PEP}_{b,T} \le} \code{pep_max} and
+#' \eqn{n_b \ge} \code{n_min}.
+#'
+#' The IPE measures concordance between reported PEPs and the decoys of the
+#' same export (an internal, T2, check). It cannot tell whether the PEPs are
+#' correct probabilities of incorrect identification, which requires external
+#' validation (e.g. entrapment).
+#'
+#' @param x A \code{dfdr_tbl} with a non-missing \code{pep} column.
+#' @param binwidth Numeric bin width (default 0.05).
+#' @param pep_max Numeric. Upper end of the PEP range binned and maximum mean
+#'   target PEP of an eligible bin (default 0.5).
+#' @param n_min Integer. Minimum bin size \eqn{n_b = T_b + D_b} (default 200).
+#' @param add_decoy Integer additive correction \eqn{a} in the reference
+#'   (default 0).
+#'
+#' @return A list with \code{bins} (one row per bin: \code{bin},
+#'   \code{n_target}, \code{n_decoy}, \code{n}, \code{pep_mean_targets},
+#'   \code{e_b}, \code{used}), \code{IPE} (numeric scalar, \code{NA} if no bin
+#'   is eligible), \code{bins_used} and \code{params}.
+#'
+#' @examples
+#' library(tibble)
+#' set.seed(1)
+#' n <- 20000
+#' null <- runif(n) < 0.3
+#' lab_decoy <- null & runif(n) < 0.5
+#' df <- tibble(
+#'   id = as.character(seq_len(n)), run = "run1",
+#'   is_decoy = lab_decoy,
+#'   score = ifelse(null, rnorm(n), rnorm(n, 3)),
+#'   q = 0, pep = pmin(1, pmax(0, plogis(-2 * score + 1)))
+#' )
+#' x <- as_dfdr_tbl(df, unit = "psm", scope = "global", q_source = "toy")
+#' dfdr_ipe(x)$IPE
+#'
+#' @export
+dfdr_ipe <- function(x, binwidth = 0.05, pep_max = 0.5, n_min = 200,
+                     add_decoy = 0L) {
+  validate_dfdr_tbl(x)
+  if (!"pep" %in% names(x) || all(is.na(x$pep))) {
+    rlang::abort("No PEP available (pep is all NA).")
+  }
+  brks <- seq(0, pep_max, by = binwidth)
+  if (utils::tail(brks, 1) < pep_max) brks <- c(brks, pep_max)
+  tb <- dfdr_pep_reliability_tdc(x, breaks = brks, add_decoy = add_decoy)
+  empty <- list(bins = tibble::tibble(), IPE = NA_real_, bins_used = 0L,
+                params = list(binwidth = binwidth, pep_max = pep_max,
+                              n_min = n_min, add_decoy = add_decoy,
+                              reference = "D_b/T_b"))
+  if (!nrow(tb)) return(empty)
+  bins <- tibble::tibble(
+    bin = tb$bin,
+    n_target = tb$n_target,
+    n_decoy = tb$n_decoy,
+    n = tb$n_target + tb$n_decoy,
+    pep_mean_targets = tb$pep_mean_targets,
+    e_b = tb$err_hat_target
+  )
+  bins$used <- bins$n >= n_min & is.finite(bins$pep_mean_targets) &
+    bins$pep_mean_targets <= pep_max
+  IPE <- if (any(bins$used)) {
+    w <- bins$n[bins$used] / sum(bins$n[bins$used])
+    sum(w * abs(bins$pep_mean_targets[bins$used] - bins$e_b[bins$used]))
+  } else NA_real_
+  empty$bins <- bins
+  empty$IPE <- IPE
+  empty$bins_used <- sum(bins$used)
+  empty
 }

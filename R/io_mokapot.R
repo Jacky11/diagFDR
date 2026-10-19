@@ -97,6 +97,18 @@ read_mokapot_psms <- function(target_path, decoy_path) {
 #' @param scope Character. Scope metadata stored in the returned object.
 #' @param q_source Character. Source label stored in metadata.
 #' @param q_max_export Numeric. Export ceiling for q-values (typically 1 for mokapot).
+#' @param q_mode Character. \code{"as_exported"} (default) keeps mokapot's
+#'   q-values. \code{"recount"} recomputes target-decoy q-values
+#'   (\eqn{(D+1)/T}, running minimum) on the competed winners from the score.
+#'
+#' @details
+#' mokapot computes its q-values by target-decoy counting over all the PSMs it
+#' receives. When several candidate PSMs per spectrum are passed (e.g. ranks
+#' 1--10 from MS2Rescore), those q-values refer to that larger universe; after
+#' competition to one winner per spectrum, thresholding the exported q-values
+#' no longer reproduces the nominal decoy ratio. Use \code{q_mode = "recount"}
+#' to obtain q-values defined on the competed universe, and report which one
+#' was used.
 #'
 #' @return
 #' An object of class \code{dfdr_tbl} (a tibble subclass) with one row per competed
@@ -130,8 +142,10 @@ mokapot_competed_universe <- function(raw,
                                       unit = "psm",
                                       scope = "global",
                                       q_source = "mokapot q-value",
-                                      q_max_export = 1) {
+                                      q_max_export = 1,
+                                      q_mode = c("as_exported", "recount")) {
   id_mode <- match.arg(id_mode)
+  q_mode <- match.arg(q_mode)
 
   req <- c(run_col, spectrum_id_col, score_col, q_col, pep_col, "is_target")
   miss <- setdiff(req, names(raw))
@@ -165,12 +179,17 @@ mokapot_competed_universe <- function(raw,
     ) |>
     dplyr::select(id, is_decoy, q, pep, run, score)
 
+  if (q_mode == "recount") {
+    out$q <- tdc_qvalues(out$score, out$is_decoy, add_decoy = 1L)
+    if (identical(q_source, "mokapot q-value")) q_source <- "TDC (D+1)/T on competed mokapot score"
+  }
+
   as_dfdr_tbl(
     out,
     unit = unit,
     scope = scope,
     q_source = q_source,
     q_max_export = q_max_export,
-    provenance = list(tool = "mokapot", id_mode = id_mode)
+    provenance = list(tool = "mokapot", id_mode = id_mode, q_mode = q_mode)
   )
 }

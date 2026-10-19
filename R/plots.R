@@ -30,13 +30,13 @@ dfdr_plot_dalpha <- function(stab_tbl, xlab = "alpha (log10)", title = "Decoy su
     ggplot2::labs(title = title, x = xlab, y = "D_alpha", color = "")
 }
 
-#' Plot \code{CV_hat} versus \code{alpha}
+#' Plot the decoy-support index versus \code{alpha}
 #'
-#' Plots a stability proxy (\code{CV_hat}) against the threshold \code{alpha} for
+#' Plots the decoy-support index \eqn{D_\alpha^{-1/2}} (column \code{support_index}) against the threshold \code{alpha} for
 #' one or more lists.
 #'
 #' @param stab_tbl A stability table (e.g. from \code{\link{dfdr_curve_stability}})
-#'   with columns \code{alpha}, \code{CV_hat}, and \code{list}.
+#'   with columns \code{alpha}, \code{support_index}, and \code{list}.
 #' @param xlab Character. X-axis label.
 #' @param title Character. Plot title.
 #'
@@ -48,17 +48,17 @@ dfdr_plot_dalpha <- function(stab_tbl, xlab = "alpha (log10)", title = "Decoy su
 #' stab_tbl <- tibble(
 #'   list = rep(c("A", "B"), each = 4),
 #'   alpha = rep(c(1e-3, 2e-3, 5e-3, 1e-2), times = 2),
-#'   CV_hat = c(0.30, 0.22, 0.15, 0.12, 0.40, 0.28, 0.20, 0.18)
+#'   support_index = c(0.30, 0.22, 0.15, 0.12, 0.40, 0.28, 0.20, 0.18)
 #' )
 #' dfdr_plot_cv(stab_tbl)
 #'
 #' @export
-dfdr_plot_cv <- function(stab_tbl, xlab = "alpha (log10)", title = "Stability proxy CV_hat vs alpha") {
-  ggplot2::ggplot(stab_tbl, ggplot2::aes(x = alpha, y = CV_hat, color = .data$list)) +
+dfdr_plot_cv <- function(stab_tbl, xlab = "alpha (log10)", title = "Decoy-support index D_alpha^(-1/2) vs alpha") {
+  ggplot2::ggplot(stab_tbl, ggplot2::aes(x = alpha, y = support_index, color = .data$list)) +
     ggplot2::geom_line() + ggplot2::geom_point() +
     ggplot2::scale_x_continuous(trans = "log10") +
     ggplot2::theme_bw() +
-    ggplot2::labs(title = title, x = xlab, y = "CV_hat", color = "")
+    ggplot2::labs(title = title, x = xlab, y = "D_alpha^(-1/2)", color = "")
 }
 
 #' Plot local decoy support \code{D_alpha_win} versus \code{alpha}
@@ -182,7 +182,7 @@ dfdr_plot_pep_reliability <- function(bins_tbl, title = "PEP reliability") {
 #' dfdr_plot_equal_chance(bands_tbl)
 #'
 #' @export
-dfdr_plot_equal_chance <- function(bands_tbl, title = "Equal-chance plausibility: decoy fraction by q-band") {
+dfdr_plot_equal_chance <- function(bands_tbl, title = "Equal chance under paired competition: decoy fraction by q-band") {
   ggplot2::ggplot(bands_tbl, ggplot2::aes(x = q_mean, y = decoy_frac, size = n)) +
     ggplot2::geom_point(alpha = 0.85) +
     ggplot2::geom_line(alpha = 0.5) +

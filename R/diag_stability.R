@@ -28,6 +28,17 @@
 #' \code{k_sqrt_mult}). The returned tibble is intended for reporting and for
 #' comparison across workflows.
 #'
+#' Column \code{FDR_hat} is the recomputed decoy ratio \eqn{D_\alpha/T_\alpha},
+#' an internal consistency check of the exported q-values, not an estimate of
+#' the realised error. Column \code{support_index} is the decoy-support index
+#' \eqn{D_\alpha^{-1/2}}; \code{CV_benchmark} is the FDP-CV benchmark
+#' \eqn{\sqrt{2}D_\alpha^{-1/2}}, an approximation to the coefficient of
+#' variation of the realised false discovery proportion under equal chance,
+#' independence, and accepted decoys standing for incorrect matches only, with
+#' \eqn{D_\alpha} and \eqn{T_\alpha} varying little across experiments
+#' (dependence between units and heavy-tailed null scores increase it).
+
+#'
 #' @examples
 #' library(tibble)
 #'
@@ -61,7 +72,9 @@ dfdr_headline <- function(x, alpha = 0.01, k_fixed = 10, k_sqrt_mult = 2) {
     T_alpha = as.integer(Ta),
     D_alpha = as.integer(Da),
     FDR_hat = if (Ta > 0) Da / Ta else NA_real_,
-    CV_hat  = if (Da > 0) 1 / sqrt(Da) else Inf,
+    support_index = if (Da > 0) 1 / sqrt(Da) else Inf,
+    CV_benchmark  = if (Da > 0) sqrt(2 / Da) else Inf,
+    
     FDR_minus1 = if (Ta > 0) max(Da - 1, 0) / Ta else NA_real_,
     FDR_plus1  = if (Ta > 0) (Da + 1) / Ta else NA_real_,
     FDR_minusK = if (Ta > 0) max(Da - k_fixed, 0) / Ta else NA_real_,
@@ -136,7 +149,7 @@ dfdr_curve_stability <- function(x, alphas, k_fixed = 10, k_sqrt_mult = 2) {
 #' A \link[tibble:tibble]{tibble} with one row per \code{alpha}. Columns include:
 #' \describe{
 #'   \item{alpha}{The threshold.}
-#'   \item{delta}{The effective window width used (\eqn{\rho\alpha} or capped).}
+#'   \item{delta}{The effective window width used (\eqn{w\alpha}, with \eqn{w} = \code{win_rel}, or capped).}
 #'   \item{n_win}{Number of entries with \code{q} in the window.}
 #'   \item{D_alpha_win}{Number of decoys in the window.}
 #'   \item{decoy_frac_win}{Decoy fraction in the window (\code{D_alpha_win/n_win}).}

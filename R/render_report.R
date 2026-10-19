@@ -2,7 +2,7 @@
 #'
 #' Renders an HTML report that summarises key diagnostics and embeds plots
 #' contained in \code{diag$plots}. The report is intended for interactive review
-#' and verifiable reporting.
+#' and auditable reporting.
 #'
 #' This function requires the \pkg{rmarkdown} package (suggested dependency) and
 #' uses the built-in R Markdown template shipped with the package
@@ -58,24 +58,44 @@ dfdr_render_report <- function(diag, out_dir,
   if (!requireNamespace("rmarkdown", quietly = TRUE)) {
     rlang::abort("HTML report rendering requires package 'rmarkdown' (in Suggests).")
   }
+    if (!is.list(diag) || is.null(diag$tables) || is.null(diag$objects)) {
+    rlang::abort("`diag` must be the output of dfdr_run_all().")
+  }
+  if (!is.character(out_dir) || length(out_dir) != 1 || !nzchar(out_dir)) {
+    rlang::abort("`out_dir` must be a single directory path.")
+  }
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
+  # rmarkdown resolves a relative output path against the template's folder,
+  # so work with absolute paths throughout.
+  out_dir <- normalizePath(out_dir, winslash = "/", mustWork = TRUE)
 
   template <- system.file("templates", "dfdr_report.Rmd", package = "diagFDR")
   if (template == "") rlang::abort("Could not find template inst/templates/dfdr_report.Rmd in the installed package.")
 
+  # Render from a private copy of the template: the installed library may be
+  # read-only, and knitting must not write next to the installed file.
+  work <- tempfile("diagFDR_report_")
+  dir.create(work)
+  on.exit(unlink(work, recursive = TRUE), add = TRUE)
+  rmd <- file.path(work, "dfdr_report.Rmd")
+  file.copy(template, rmd, overwrite = TRUE)
+
   out_file <- file.path(out_dir, filename)
 
   rmarkdown::render(
-    input = template,
+    input = rmd,
     output_file = out_file,
     output_format = rmarkdown::html_document(
-      self_contained = self_contained, toc = TRUE, toc_depth = 3, theme = "readable"
+      self_contained = self_contained, toc = TRUE, toc_depth = 3, theme = "readable",
+      mathjax = NULL
     ),
-    intermediates_dir = out_dir,
+    intermediates_dir = work,
+    knit_root_dir = work,
     params = list(diag = diag, out_dir = out_dir),
     envir = new.env(parent = globalenv()),
     quiet = TRUE
   )
+
 
   if (isTRUE(open)) utils::browseURL(out_file)
   invisible(out_file)

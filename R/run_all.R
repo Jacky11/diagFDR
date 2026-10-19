@@ -9,7 +9,8 @@
 #'   \item Stability curves across \code{alphas}
 #'   \item Local tail decoy support near each \code{alpha}
 #'   \item Elasticity (Jaccard overlap under threshold perturbation)
-#'   \item PEP reliability / IPE and PEP sanity summaries (if \code{pep} is present)
+#'   \item PEP reliability, IPE (target-decoy comparator, see \code{\link{dfdr_ipe}})
+#'     and PEP sanity summaries (if \code{pep} is present)
 #'   \item Equal-chance by q-bands (always attempted; may be not applicable if q-range is truncated)
 #'   \item (Pseudo-)p-value calibration and Storey \eqn{\pi_0(\lambda)} (if \code{p} is present or computed)
 #'   \item BH diagnostics (if \code{p} is present)
@@ -34,7 +35,19 @@
 #' @param pep_rel_tdc_breaks Numeric vector. Breaks used for the TDC-style PEP reliability bins.
 #' @param pep_rel_tdc_add_decoy Integer. Additive correction used in D/T for TDC-style reliability.
 #' @param compute_pseudo_pvalues Logical. If \code{TRUE}, attempt to compute pseudo-p-values
-#'   when \code{p} is missing.
+#'   when \code{p} is missing. This needs a \code{score} column (higher is better);
+#'   a list without one is left without p-value diagnostics, with a warning, and the
+#'   reason is recorded in its metadata (\code{p_source}) and in the report.
+#'   DIA-NN 2.x reports carry no discriminant score (no \code{CScore}), so the
+#'   DIA-NN builders return \code{score = NA} unless \code{score_col} names one.
+#' @param pseudo_pvalue_score Character. Score used for the pseudo-p-values:
+#'   \code{"score"} (default) uses the \code{score} column only; \code{"pep"}
+#'   falls back on \code{-pep} when no score is available. PEP is a monotone
+#'   function of the discriminant score only within the model that produced it
+#'   (e.g. one run), it is bounded and heavily tied near 0 and 1, and on lists
+#'   collapsed across runs it is the smallest PEP of each unit; the resulting
+#'   pseudo-p-values are therefore approximate and coarse, best read as a
+#'   ranking-based diagnostic.
 #' @param pseudo_pvalue_method Character. Method passed to \code{\link{score_to_pvalue}}
 #'   (default \code{"decoy_ecdf"}).
 #' @param p_u_grid Numeric vector in \eqn{(0,1]}. Grid for p-value ECDF calibration diagnostics.
@@ -58,6 +71,10 @@
 #'   \item{objects}{The input \code{xs}, possibly augmented with computed pseudo-p-values
 #'   if \code{compute_pseudo_pvalues=TRUE}.}
 #'   \item{params}{A list of parameter values used to compute the diagnostics.}
+#'   \item{interpretation}{Plain-language summaries used by the HTML report:
+#'   \code{p} (per list, from \code{\link{dfdr_p_interpretation}}), \code{pep}
+#'   (per list, from \code{\link{dfdr_pep_interpretation}}) and the underlying
+#'   \code{p_summary} and \code{pep_summary} objects.}
 #' }
 #'
 #' @examples
@@ -103,14 +120,15 @@ dfdr_run_all <- function(xs,
                          pep_binwidth = 0.05,
                          pep_n_min = 200,
                          pep_max = 0.5,
-                         # ---- NEW: PEP sanity + alt reliability (TDC-style)
+                                                  # ---- PEP sanity + TDC-style reliability
                          pep_sanity_thresholds = c(0.01, 0.05, 0.1, 0.2),
                          pep_density_max = 0.5,
                          pep_rel_tdc_breaks = seq(0, 0.5, by = 0.05),
                          pep_rel_tdc_add_decoy = 0L,
                          # ---- p-value diagnostics defaults
                          compute_pseudo_pvalues = TRUE,
-                         pseudo_pvalue_method = "decoy_ecdf",
+                                                  pseudo_pvalue_method = "decoy_ecdf",
+                         pseudo_pvalue_score = c("score", "pep"),
                          p_u_grid = c(seq(0.001, 0.1, by = 0.001), seq(0.11, 1, by = 0.01)),
                          p_u_max = 0.1,
                          p_stratify = NULL,
@@ -121,7 +139,9 @@ dfdr_run_all <- function(xs,
                          bh_win = 0.2,
                          bh_delta = NULL) {
 
-  bh_boundary <- match.arg(bh_boundary)
+    bh_boundary <- match.arg(bh_boundary)
+  pseudo_pvalue_score <- match.arg(pseudo_pvalue_score)
+
 
   if (!is.list(xs) || is.null(names(xs)) || any(names(xs) == "")) {
     rlang::abort("`xs` must be a *named* list of dfdr_tbl objects.")
@@ -130,7 +150,8 @@ dfdr_run_all <- function(xs,
 
   # ---- Add pseudo p-values if requested
   if (compute_pseudo_pvalues) {
-    xs <- add_pseudo_pvalues_to_list(xs, method = pseudo_pvalue_method)
+        xs <- add_pseudo_pvalues_to_list(xs, method = pseudo_pvalue_method,
+                                     score_source = pseudo_pvalue_score)
   }
 
   # ---- Core target/decoy tables (stacked with list label)
@@ -144,6 +165,7 @@ dfdr_run_all <- function(xs,
 
   # ---- Calibration: PEP reliability and sumpep (only for those with PEP)
   pep_rel <- list()
+  pep_ipe <- list()
   sumpep <- list()
 
   # ---- PEP sanity + alternative (TDC-style) reliability
@@ -154,8 +176,10 @@ dfdr_run_all <- function(xs,
   eqchance <- list()
 
   # ---- p-value diagnostics (only if p exists and has finite values)
-  p_calib <- list()
+    p_calib <- list()
   p_pi0 <- list()
+  p_summ <- list()
+  pep_summ <- list()
   bh_head <- list()
   bh_elast <- list()
 
@@ -168,7 +192,15 @@ dfdr_run_all <- function(xs,
     if (has_pep) {
       pr <- dfdr_pep_reliability(x, binwidth = pep_binwidth, n_min = pep_n_min, pep_max = pep_max)
       pep_rel[[nm]] <- pr
-      sumpep[[nm]] <- dfdr_sumpep(x, alphas)
+      # IPE of the headline table: target-decoy comparator D_b/T_b (paper Eq. 1)
+      pep_ipe[[nm]] <- dfdr_ipe(x, binwidth = pep_binwidth, pep_max = pep_max,
+                                n_min = pep_n_min, add_decoy = pep_rel_tdc_add_decoy)
+            sumpep[[nm]] <- dfdr_sumpep(x, alphas)
+      pep_summ[[nm]] <- tryCatch(
+        dfdr_pep_summary(x, alpha = alpha_main, binwidth = pep_binwidth,
+                         pep_max = pep_max, n_min = pep_n_min),
+        error = function(e) NULL)
+
 
       # Sanity: decoys getting small PEP?
       pep_sanity[[nm]] <- dfdr_pep_decoy_sanity(x, thresholds = pep_sanity_thresholds)
@@ -211,11 +243,20 @@ dfdr_run_all <- function(xs,
         delta = bh_delta
       )
 
-      bh_elast[[nm]] <- dfdr_bh_elasticity(
+            bh_elast[[nm]] <- dfdr_bh_elasticity(
         x,
         alphas = alphas,
         eps = eps
       )
+
+      # pi0 estimates and FDR thresholds, for the report's summary sentences
+      p_summ[[nm]] <- tryCatch(
+        dfdr_p_summary(x, alpha = alpha_main, min_n = p_min_n_pi0),
+        error = function(e) {
+          rlang::warn(sprintf("List '%s': p-value summary not computed (%s).", nm, conditionMessage(e)))
+          NULL
+        })
+
 
     }
   }
@@ -230,17 +271,43 @@ dfdr_run_all <- function(xs,
   headline <- headline |>
     dplyr::left_join(dwin_main, by = "list")
 
-  # Merge IPE from PEP reliability
+  # Merge IPE (target-decoy comparator) and the pooled-comparator variant
   if (length(pep_rel) > 0) {
-    ipe_tbl <- purrr::imap_dfr(pep_rel, ~tibble::tibble(list = .y, IPE = .x$IPE))
+    ipe_tbl <- purrr::imap_dfr(pep_rel, ~tibble::tibble(
+      list = .y,
+      IPE = pep_ipe[[.y]]$IPE,
+      IPE_bins = as.integer(pep_ipe[[.y]]$bins_used),
+      IPE_pooled = .x$IPE
+    ))
     headline <- headline |>
       dplyr::left_join(ipe_tbl, by = "list")
   }
 
+  # Equal-chance evaluability: not evaluable on two-pass exports (the
+  # low-confidence region is conditioned by the first pass) or when the
+  # export ceiling / pooled count does not allow the test.
+  eq_eval <- purrr::imap_dfr(xs, function(x, nm) {
+    meta <- attr(x, "meta") %||% list()
+        tp <- isTRUE(meta$two_pass)
+    # DIA-NN list whose pass status was not given: an imbalance may come from
+    # the second pass, so it is reported as a caution (see flag_headline()).
+    tp_unknown <- (is.null(meta$two_pass) || (length(meta$two_pass) == 1 && is.na(meta$two_pass))) &&
+      identical((meta$provenance %||% list())$tool, "DIA-NN")
+    pooled <- if (!is.null(eqchance[[nm]])) eqchance[[nm]]$pooled else NULL
+    enough <- if (is.data.frame(pooled) && "pass_minN" %in% names(pooled)) isTRUE(pooled$pass_minN[1]) else TRUE
+    tibble::tibble(
+      list = nm,
+      eq_evaluable = !tp && enough,
+      eq_reason = if (tp) "two_pass" else if (!enough) "insufficient_N" else
+        if (tp_unknown) "pass_unknown" else NA_character_
+    )
+  })
+  headline <- headline |> dplyr::left_join(eq_eval, by = "list")
+
   # Merge effect_abs from equal-chance pooled
   if (length(eqchance) > 0) {
     effect_tbl <- purrr::imap_dfr(eqchance, ~dplyr::mutate(.x$pooled, list = .y)) |>
-      dplyr::select(.data$list, .data$effect_abs)
+      dplyr::select(dplyr::all_of(c("list", "effect_abs")))
     headline <- headline |> dplyr::left_join(effect_tbl, by = "list")
   }
 
@@ -294,7 +361,7 @@ dfdr_run_all <- function(xs,
   # ---- Equal-chance plots per list
   for (nm in names(eqchance)) {
     plots[[paste0("equal_chance__", nm)]] <-
-      dfdr_plot_equal_chance(eqchance[[nm]]$bands, title = paste0("Equal-chance by q-band: ", nm))
+      dfdr_plot_equal_chance(eqchance[[nm]]$bands, title = paste0("Equal chance (paired competition) by q-band: ", nm))
   }
 
   # ---- p-value / pseudo-p-value density plots per list (if p exists)
@@ -311,60 +378,41 @@ dfdr_run_all <- function(xs,
     }
   }
 
-  # ---- p-value plots per list (if available)
-  for (nm in names(p_calib)) {
-    x<-xs[[nm]]
-    if ("p" %in% names(x) && any(is.finite(x$p))) {
-    plots[[paste0("Calibration_pvalues__", nm)]] <-
-      dfdr_plot_p_calibration2(x,sel="all")
-    }
+  # ---- p-value plots per list (if available). Each plot is built
+  # independently: a list too small for one diagnostic (e.g. pi0 needs
+  # p_min_n_pi0 values) loses that plot only, with a warning.
+  safe_plot <- function(expr, what, nm) {
+    tryCatch(expr, error = function(e) {
+      rlang::warn(sprintf("List '%s': %s plot skipped (%s).", nm, what, conditionMessage(e)))
+      NULL
+    })
   }
   for (nm in names(p_calib)) {
-    x<-xs[[nm]]
-    if ("p" %in% names(x) && any(is.finite(x$p))) {
-      plots[[paste0("Calibration_pvalues_decoys__", nm)]] <-
-        dfdr_plot_p_calibration2(x,sel="decoy")
+    x <- xs[[nm]]
+    if (!("p" %in% names(x) && any(is.finite(x$p)))) next
+    for (sel in c("all", "decoy", "target")) {
+      key <- c(all = "Calibration_pvalues__", decoy = "Calibration_pvalues_decoys__",
+               target = "Calibration_pvalues_targets__")[[sel]]
+      plots[[paste0(key, nm)]] <- safe_plot(dfdr_plot_p_calibration2(x, sel = sel),
+                                            paste0("p-value calibration (", sel, ")"), nm)
+    }
+    for (sel in c("all", "decoy", "target")) {
+      key <- c(all = "Estimated_fdr__", decoy = "Estimated_fdr_decoys__",
+               target = "Estimated_fdr_targets__")[[sel]]
+      plots[[paste0(key, nm)]] <- safe_plot(dfdr_plot_fdrhat_pi0(x, sel = sel)$plot,
+                                            paste0("estimated FDR (", sel, ")"), nm)
     }
   }
-  for (nm in names(p_calib)) {
-    x<-xs[[nm]]
-    if ("p" %in% names(x) && any(is.finite(x$p))) {
-      plots[[paste0("Calibration_pvalues_targets__", nm)]] <-
-        dfdr_plot_p_calibration2(x,sel="target")
-    }
-  }
-  for (nm in names(p_calib)) {
-    x<-xs[[nm]]
-    if ("p" %in% names(x) && any(is.finite(x$p))) {
-      plots[[paste0("Estimated_fdr__", nm)]] <-
-        dfdr_plot_fdrhat_pi0(x,sel="all")$plot
-    }
-  }
-  for (nm in names(p_calib)) {
-    x<-xs[[nm]]
-    if ("p" %in% names(x) && any(is.finite(x$p))) {
-      plots[[paste0("Estimated_fdr_decoys__", nm)]] <-
-        dfdr_plot_fdrhat_pi0(x,sel="decoy")$plot
-    }
-  }
-  for (nm in names(p_calib)) {
-    x<-xs[[nm]]
-    if ("p" %in% names(x) && any(is.finite(x$p))) {
-      plots[[paste0("Estimated_fdr_targets__", nm)]] <-
-        dfdr_plot_fdrhat_pi0(x,sel="target")$plot
-    }
-  }
-  # for (nm in names(p_calib)) {
-  #   plots[[paste0("Super_uniformity_pvalues__", nm)]] <-
-  #     dfdr_plot_p_calibration(p_calib[[nm]]$ecdf, title = paste0("P-value calibration: ", nm))
-  # }
   for (nm in names(p_pi0)) {
-    plots[[paste0("pi0_Storey__", nm)]] <-
-      dfdr_plot_pi0(p_pi0[[nm]]$pi0, title = paste0("Storey pi0(lambda): ", nm))
+    pt <- p_pi0[[nm]]$pi0
+    if (is.data.frame(pt) && nrow(pt) > 0 && all(c("stratum", "lambda", "pi0_hat") %in% names(pt))) {
+      plots[[paste0("pi0_Storey__", nm)]] <- safe_plot(
+        dfdr_plot_pi0(pt, title = paste0("Storey pi0(lambda): ", nm)), "Storey pi0", nm)
+    }
   }
   for (nm in names(bh_elast)) {
-    plots[[paste0("BH_elasticity__", nm)]] <-
-      dfdr_plot_bh_elasticity(bh_elast[[nm]], title = paste0("BH elasticity: ", nm))
+    plots[[paste0("BH_elasticity__", nm)]] <- safe_plot(
+      dfdr_plot_bh_elasticity(bh_elast[[nm]], title = paste0("BH elasticity: ", nm)), "BH elasticity", nm)
   }
 
   # ---- Stack BH headline tables (if any)
@@ -394,7 +442,10 @@ dfdr_run_all <- function(xs,
       # PEP
       sumpep = sumpep,
       pep_reliability_bins = purrr::imap(pep_rel, ~.x$bins),
-      pep_IPE = purrr::imap_dfr(pep_rel, ~tibble::tibble(list = .y, IPE = .x$IPE)),
+      pep_IPE = purrr::imap_dfr(pep_rel, ~tibble::tibble(
+        list = .y, IPE = pep_ipe[[.y]]$IPE, IPE_bins = as.integer(pep_ipe[[.y]]$bins_used),
+        IPE_pooled = .x$IPE)),
+      pep_ipe_bins = purrr::imap(pep_ipe, ~.x$bins),
 
       # PEP sanity + alt reliability
       pep_decoy_sanity = purrr::imap_dfr(pep_sanity, ~dplyr::mutate(.x, list = .y)),
@@ -410,9 +461,22 @@ dfdr_run_all <- function(xs,
       pi0_storey = purrr::imap(p_pi0, ~.x$pi0),
       pi0_storey_summary = purrr::imap_dfr(p_pi0, ~dplyr::mutate(.x$summary, list = .y)),
 
-      # BH
+            # BH
       bh_headline = bh_headline_tbl,
-      bh_elasticity = bh_elasticity_tbl
+      bh_elasticity = bh_elasticity_tbl,
+
+      # summaries used for the report's interpretation sentences
+      p_pi0_summary = purrr::imap_dfr(purrr::compact(p_summ), ~dplyr::mutate(.x$summary, list = .y)),
+      p_fdr_thresholds = purrr::imap_dfr(purrr::compact(p_summ), ~dplyr::mutate(.x$thresholds, list = .y))
+    ),
+    interpretation = list(
+      p = purrr::imap(purrr::compact(p_summ), function(s, nm) {
+        Ta <- headline$T_alpha[headline$list == nm]
+        dfdr_p_interpretation(s, T_alpha = if (length(Ta)) Ta[1] else NULL)
+      }),
+      pep = purrr::map(purrr::compact(pep_summ), dfdr_pep_interpretation),
+      p_summary = purrr::compact(p_summ),
+      pep_summary = purrr::compact(pep_summ)
     ),
     plots = plots,
     objects = xs,

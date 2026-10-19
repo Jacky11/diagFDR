@@ -50,7 +50,14 @@ read_diann_parquet <- function(path) {
 #' Constructs a precursor-level universe by aggregating a DIA-NN report table to
 #' one row per \code{Precursor.Id}. For each precursor, the minimum q-value is
 #' used (via \code{safe_min}) and \code{is_decoy} is set to \code{TRUE} if any row
-#' in the group is a decoy.
+#' in the group is a decoy. The smallest PEP across runs and the largest score
+#' are kept. A run-level PEP collapsed in this way is generally too small for the
+#' precursor-level unit; \code{\link{dfdr_ipe}} detects this.
+#'
+#' With \code{q_col = "Global.Q.Value"} this gives the experiment-wide list.
+#' With \code{q_col = "Q.Value"} it gives the minimum of the run-wise q-values
+#' (see \code{\link{diann_global_minrunq}}), which is not an experiment-wide
+#' q-value: its recomputed decoy ratio exceeds the threshold.
 #'
 #' @param rep A DIA-NN report tibble (e.g. returned by \code{\link{read_diann_parquet}}).
 #' @param q_col Character. Column name for q-values (default \code{"Q.Value"}).
@@ -60,6 +67,9 @@ read_diann_parquet <- function(path) {
 #' @param unit Character. Unit metadata stored in the returned object.
 #' @param scope Character. Scope metadata stored in the returned object.
 #' @param q_source Character. Label stored in metadata describing the q-value source.
+#' @param two_pass Logical or \code{NA}. \code{TRUE} for reports of a two-pass
+#'   search (\code{--reanalyse}, match-between-runs); the equal-chance check is
+#'   then reported as not evaluable. See \code{\link{as_dfdr_tbl}}.
 #'
 #' @return
 #' A \code{dfdr_tbl} (tibble subclass) with one row per precursor and required
@@ -87,7 +97,8 @@ diann_global_precursor <- function(rep,
                                    q_max_export = NA_real_,
                                    unit = "precursor",
                                    scope = "global",
-                                   q_source = q_col) {
+                                   q_source = q_col,
+                                    two_pass = NA) {
   diann_require_cols(rep, c("Precursor.Id", "Decoy", q_col))
 
   if (is.null(pep_col)) pep_col <- if ("PEP" %in% names(rep)) "PEP" else NULL
@@ -112,7 +123,7 @@ diann_global_precursor <- function(rep,
       q = safe_min(q),
       pep = safe_min(pep),
       run = NA_character_,
-      score = safe_min(score),
+      score = safe_max(score),
       .groups = "drop"
     )
 
@@ -122,7 +133,8 @@ diann_global_precursor <- function(rep,
     scope = scope,
     q_source = q_source,
     q_max_export = q_max_export,
-    provenance = list(tool = "DIA-NN")
+    provenance = list(tool = "DIA-NN"),
+    two_pass = diann_note_two_pass(two_pass)
   )
 }
 
@@ -147,6 +159,9 @@ diann_global_precursor <- function(rep,
 #' @param unit Character. Unit metadata stored in the returned object.
 #' @param scope Character. Scope metadata stored in the returned object.
 #' @param q_source Character. Label stored in metadata describing the q-value source.
+#' @param two_pass Logical or \code{NA}. \code{TRUE} for reports of a two-pass
+#'   search (\code{--reanalyse}, match-between-runs); the equal-chance check is
+#'   then reported as not evaluable. See \code{\link{as_dfdr_tbl}}.
 #'
 #' @return
 #' A \code{dfdr_tbl} with one row per run-by-precursor unit. The returned table
@@ -177,7 +192,8 @@ diann_runxprecursor <- function(rep,
                                 id_mode = c("id", "runxid"),
                                 unit = "runxprecursor",
                                 scope = "runwise",
-                                q_source = q_col) {
+                                q_source = q_col,
+                                 two_pass = NA) {
   diann_require_cols(rep, c("Precursor.Id", "Decoy", q_col))
 
   id_mode <- match.arg(id_mode)
@@ -204,7 +220,7 @@ diann_runxprecursor <- function(rep,
       is_decoy = any(is_decoy),
       q = safe_min(q),
       pep = safe_min(pep),
-      score = safe_min(score),
+      score = safe_max(score),
       .groups = "drop"
     ) |>
     dplyr::mutate(
@@ -218,7 +234,8 @@ diann_runxprecursor <- function(rep,
     scope = scope,
     q_source = q_source,
     q_max_export = q_max_export,
-    provenance = list(tool = "DIA-NN", run_col = run_col, id_mode = id_mode)
+    provenance = list(tool = "DIA-NN", run_col = run_col, id_mode = id_mode),
+    two_pass = diann_note_two_pass(two_pass)
   )
 }
 
@@ -240,6 +257,9 @@ diann_runxprecursor <- function(rep,
 #' @param unit Character. Unit metadata stored in the returned object.
 #' @param scope Character. Scope metadata stored in the returned object.
 #' @param q_source Character. Source label stored in metadata.
+#' @param two_pass Logical or \code{NA}. \code{TRUE} for reports of a two-pass
+#'   search (\code{--reanalyse}, match-between-runs); the equal-chance check is
+#'   then reported as not evaluable. See \code{\link{as_dfdr_tbl}}.
 #'
 #' @return
 #' A \code{dfdr_tbl} with one row per precursor, where \code{q} equals the minimum
@@ -269,7 +289,8 @@ diann_global_minrunq <- function(rep,
                                  q_max_export = NA_real_,
                                  unit = "precursor",
                                  scope = "aggregated",
-                                 q_source = paste0("min_run(", q_col, ")")) {
+                                 q_source = paste0("min_run(", q_col, ")"),
+                                  two_pass = NA) {
   diann_require_cols(rep, c("Precursor.Id", "Decoy", q_col))
 
   if (is.null(run_col)) run_col <- diann_detect_run_col(rep)
@@ -295,7 +316,7 @@ diann_global_minrunq <- function(rep,
       q = safe_min(q),     # min over runs
       pep = safe_min(pep), # min PEP over runs (not guaranteed calibrated; still useful as diagnostic)
       run = NA_character_,
-      score = safe_min(score),
+      score = safe_max(score),
       .groups = "drop"
     ) |>
     dplyr::select(id, is_decoy, q, pep, run, score)
@@ -306,6 +327,22 @@ diann_global_minrunq <- function(rep,
     scope = scope,
     q_source = q_source,
     q_max_export = q_max_export,
-    provenance = list(tool = "DIA-NN", run_col = run_col)
+    provenance = list(tool = "DIA-NN", run_col = run_col),
+    two_pass = diann_note_two_pass(two_pass)
   )
+}
+
+# Tell the user once per session that DIA-NN pass status matters for the
+# equal-chance check. Returns two_pass unchanged.
+diann_note_two_pass <- function(two_pass) {
+  if (length(two_pass) == 1 && is.na(two_pass)) {
+    rlang::inform(
+      c("`two_pass` not specified for a DIA-NN list.",
+        i = paste0("If the report comes from a two-pass search (`--reanalyse`, match-between-runs), ",
+                   "set `two_pass = TRUE`: the equal-chance check is then reported as not evaluable. ",
+                   "Set `two_pass = FALSE` for a single-pass search. Until then an equal-chance ",
+                   "imbalance is reported as a caution only.")),
+      .frequency = "once", .frequency_id = "diagFDR_diann_two_pass")
+  }
+  two_pass
 }
