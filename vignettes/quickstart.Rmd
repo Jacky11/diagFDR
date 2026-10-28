@@ -1,0 +1,146 @@
+---
+title: "diagFDR quick start: scope, calibration, stability and entrapment on a simulated list"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{diagFDR quick start}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7, fig.height = 4)
+```
+
+This vignette runs end to end without external data. It uses the ground-truth
+simulator of the diagFDR paper (Supplementary Note S6) so that every
+diagnostic can be compared with the *realised* false discovery proportion,
+which is known exactly in simulation and unknown on real data.
+
+```{r}
+library(diagFDR)
+sim <- sim_tdc_example          # 20,000 units, Gaussian nulls, correct specification
+sim
+```
+
+## 1. Headline support and the FDP-CV benchmark
+
+An FDR claim at a threshold $\alpha$ should come with the accepted target and
+decoy counts, $T_\alpha$ and $D_\alpha$, the recomputed decoy ratio
+$D_\alpha/T_\alpha$, the decoy-support index $D_\alpha^{-1/2}$ and the FDP-CV
+benchmark $\sqrt2\,D_\alpha^{-1/2}$ (Proposition 1).
+
+```{r}
+h <- dfdr_headline(sim, alpha = 0.01)
+h[, c("alpha", "T_alpha", "D_alpha", "FDR_hat", "support_index", "CV_benchmark")]
+```
+
+In simulation the realised FDP is known:
+
+```{r}
+dfdr_realised_fdp(sim, alpha = c(0.05, 0.01, 0.002))
+```
+
+The benchmark says how much the realised FDP is expected to vary *across
+experiments* with this decoy support. `dfdr_check_cv_benchmark()` checks it by
+Monte Carlo (the paper uses 1000 replicates of $2\times10^5$ units; here a
+small run suffices):
+
+```{r}
+dfdr_check_cv_benchmark(B = 30, n = 20000, alpha = 0.01)[, c("alpha", "CV_FDP", "mean_D", "kappa")]
+```
+
+`kappa` is the ratio of the observed CV to $D_\alpha^{-1/2}$; Proposition 1
+predicts $\sqrt2\approx1.41$ under independence.
+
+## 2. Stability across thresholds
+
+```{r}
+alphas <- c(0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05)
+dfdr_curve_stability(sim, alphas = alphas)[, c("alpha", "T_alpha", "D_alpha", "support_index")]
+dfdr_local_tail(sim, alphas = alphas, win_rel = 0.2)[, c("alpha", "D_alpha_win")]
+dfdr_elasticity(sim, alphas = alphas, eps = 0.2)[, c("alpha", "jaccard")]
+```
+
+## 3. Calibration: PEP concordance and equal chance
+
+The simulated list carries the true PEP of every target, so the IPE should
+be close to zero under the target--decoy comparator $D_b/T_b$:
+
+```{r}
+dfdr_ipe(sim)$IPE
+dfdr_equal_chance_qbands(sim)$pooled
+```
+
+## 4. What a misspecified decoy model looks like
+
+Decoys that are under-dispersed (scenario S2 of the paper) inflate the realised
+FDP while the reported decoy ratio stays at $\alpha$:
+
+```{r}
+bad <- dfdr_simulate_tdc(n = 20000, decoy_scale = 0.85, seed = 2)
+dfdr_realised_fdp(bad, alpha = 0.01)
+```
+
+This is why external validation (entrapment) is a distinct requirement.
+
+## 5. Label propagation at protein-group level
+
+When several exported rows collapse into one reported unit and the rows do
+not all carry the same target/decoy label, the rule that assigns the unit's
+label must be stated. The four rules are compared by
+`dfdr_label_rule_audit()`:
+
+```{r}
+set.seed(1)
+rep <- data.frame(Protein.Group = rep(paste0("P", 1:2000), each = 3),
+                  Decoy = rbinom(6000, 1, 0.12),
+                  Global.PG.Q.Value = c(runif(6000, 0, 0.3)))
+label_is_intrinsic(rep, "Protein.Group")
+dfdr_label_rule_audit(rep, "Protein.Group", "Global.PG.Q.Value", alpha = 0.05)
+```
+
+Picked-protein competition is the procedural alternative that needs no rule:
+
+```{r}
+pg <- diann_global_proteingroup(rep, rule = "split", two_pass = FALSE)
+pk <- dfdr_picked_protein(pg, alpha = 0.05)
+c(T = pk$T_alpha, D = pk$D_alpha, ratio = pk$decoy_ratio, pairs = pk$n_pairs)
+```
+
+## 6. External validation by entrapment
+
+Entrapment matches are accepted identifications known to be false because
+they map only to a proteome absent from the sample. On a real DIA-NN
+entrapment search the ids come from `diann_entrapment_ids(rep, accessions)`
+with the accessions read by `read_fasta_accessions()`; here we label some
+incorrect targets as entrapment to show the output.
+
+```{r}
+truth <- attr(sim, "truth")
+ent_ids <- sim$id[!sim$is_decoy & truth$is_null & runif(nrow(sim)) < 0.3]
+dfdr_entrapment(sim, ent_ids, alpha = c(0.05, 0.01), r = 0.43)
+```
+
+`fdp_raw` is $E_\alpha/T_\alpha$ with a Wilson interval; `fdp_corrected` is
+the size-corrected estimate of Wen et al. (2025), which needs the
+entrapment-to-target size ratio `r` (`dfdr_entrapment_size_ratio()` computes
+it from the FASTA files at protein and peptide level).
+
+Two scope choices that overlap almost entirely can still differ sharply where
+they disagree. `dfdr_entrapment_discordant()` computes the entrapment rate on
+the shared core and on the discordant set:
+
+```{r}
+a1 <- dfdr_accepted(sim, 0.01)
+a2 <- dfdr_accepted(sim, 0.03)      # a looser list standing in for a mis-scoped one
+d  <- dfdr_entrapment_discordant(a1, a2, ent_ids)
+d
+attr(d, "ratio"); attr(d, "jaccard")
+```
+
+## 7. Report
+
+`dfdr_run_all()` runs the standard suite on a named list of `dfdr_tbl`
+objects and `dfdr_render_report()` writes the HTML report with alerts tagged
+by their evidential basis; see the DIA-NN, Spectronaut, MaxQuant, mokapot and
+mzIdentML vignettes for the adapters.
