@@ -37,8 +37,8 @@ dfdr_alert_basis <- function() {
                   "> 0.30 (caution > 0.15)", "< 5 (caution < 20)", "> 0.05",
                   "|pi_D - 0.5| > 0.15 (caution > 0.10); n/e on two-pass exports",
                   "none"),
-    basis = c("derived check", "simulation-informed alert",
-              "simulation-informed alert", "heuristic alert", "heuristic alert",
+    basis = c("derived check", "heuristic alert",
+              "heuristic alert", "heuristic alert", "heuristic alert",
               "simulation-informed alert", "descriptive")
   )
 }
