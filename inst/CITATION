@@ -1,0 +1,15 @@
+citHeader("To cite diagFDR in publications use:")
+bibentry(
+  bibtype = "Article",
+  title   = "diagFDR: Assessing False Discovery Rate Claims in Proteomics with Scope, Calibration and Stability Diagnostics",
+  author  = c(person("Marie", "Chion"), person("Alexandre", "Godmer"),
+              person("Thibaut", "Douché"), person("Mariette", "Matondo"),
+              person("Quentin", "Giai Gianetto")),
+  journal = "bioRxiv",
+  year    = "2026",
+  doi     = "10.64898/2026.04.16.718468",
+  note    = "R package version 0.2.1",
+  textVersion = paste("Chion M, Godmer A, Douché T, Matondo M, Giai Gianetto Q (2026).",
+    "diagFDR: Assessing False Discovery Rate Claims in Proteomics with Scope, Calibration and Stability Diagnostics.",
+    "bioRxiv, doi:10.64898/2026.04.16.718468. R package version 0.2.1.")
+)

@@ -68,10 +68,10 @@ col_def <- c(
   IPE_pooled = "same summary with the pooled comparator D<sub>b</sub>/(T<sub>b</sub>+D<sub>b</sub>) (secondary summary)",
   eq_evaluable = "whether the equal-chance check is evaluable on this list",
   eq_reason = "why not, or why only a caution: two_pass (second-pass export), insufficient_N, pass_unknown (DIA-NN list without two_pass)",
-  flag_Dalpha = "decoy-count alert: D<sub>&alpha;</sub> &lt; 10 alert, &lt; 50 caution (simulation-informed)",
-  "D flag" = "decoy-count alert: D<sub>&alpha;</sub> &lt; 10 alert, &lt; 50 caution (simulation-informed)",
-  flag_support = "decoy-support alert: D<sub>&alpha;</sub><sup>&minus;1/2</sup> &gt; 0.30 alert, &gt; 0.15 caution (simulation-informed)",
-  "support flag" = "decoy-support alert: D<sub>&alpha;</sub><sup>&minus;1/2</sup> &gt; 0.30 alert, &gt; 0.15 caution (simulation-informed)",
+  flag_Dalpha = "decoy-count alert: D<sub>&alpha;</sub> &lt; 10 alert, &lt; 50 caution (heuristic)",
+  "D flag" = "decoy-count alert: D<sub>&alpha;</sub> &lt; 10 alert, &lt; 50 caution (heuristic)",
+  flag_support = "decoy-support alert: D<sub>&alpha;</sub><sup>&minus;1/2</sup> &gt; 0.30 alert, &gt; 0.15 caution (heuristic)",
+  "support flag" = "decoy-support alert: D<sub>&alpha;</sub><sup>&minus;1/2</sup> &gt; 0.30 alert, &gt; 0.15 caution (heuristic)",
   
   flag_Dwin = "boundary-support alert: D<sub>&alpha;,win</sub> &lt; 5 alert, &lt; 20 caution (heuristic)",
   "D_win flag" = "boundary-support alert: D<sub>&alpha;,win</sub> &lt; 5 alert, &lt; 20 caution (heuristic)",
@@ -412,7 +412,7 @@ if (!has_flags) {
         }
       }
       if ("flag_Dalpha" %in% names(row) && !is.na(row$flag_Dalpha) && row$flag_Dalpha != "OK" && row$flag_Dalpha != "NA") {
-        cat(sprintf('<li>[simulation-informed alert] Decoy support: %s (D_alpha = %d)</li>\n', row_disp$flag_Dalpha, row$D_alpha))
+        cat(sprintf('<li>[heuristic alert] Decoy support: %s (D_alpha = %d)</li>\n', row_disp$flag_Dalpha, row$D_alpha))
       }
             if ("flag_Dwin" %in% names(row) && !is.na(row$flag_Dwin) && row$flag_Dwin != "OK" && row$flag_Dwin != "NA") {
         cat(sprintf('<li>[heuristic alert] Local boundary support: %s (D_alpha,win = %d)</li>\n', row_disp$flag_Dwin, as.integer(row$D_alpha_win)))
@@ -420,7 +420,7 @@ if (!has_flags) {
             fs <- "flag_support"
 
       if (fs %in% names(row) && !is.na(row[[fs]]) && row[[fs]] != "OK" && row[[fs]] != "NA") {
-        cat(sprintf('<li>[simulation-informed alert] Decoy support: %s (D_alpha^-1/2 = %.3f; FDP-CV benchmark = %.3f)</li>\n', row_disp[[fs]], row$support_index, sqrt(2) * row$support_index))
+        cat(sprintf('<li>[heuristic alert] Decoy support: %s (D_alpha^-1/2 = %.3f; FDP-CV benchmark = %.3f)</li>\n', row_disp[[fs]], row$support_index, sqrt(2) * row$support_index))
       }
       cat('</ul>\n')
     }
@@ -862,8 +862,8 @@ The automated flags use these thresholds. Their evidential basis differs: a *der
 | Metric | OK | CAUTION | ALERT | Basis |
 |--------|----|---------|-------|-------|
 | **Recomputed decoy ratio D/T** | <= alpha*1.2 | alpha*1.2--alpha*1.5 | > alpha*1.5 | derived check |
-| **D_alpha** | >= 50 | 10--50 | < 10 | simulation-informed alert |
-| **Decoy-support index D_alpha^-1/2** | <= 0.15 | 0.15--0.30 | > 0.30 | simulation-informed alert |
+| **D_alpha** | >= 50 | 10--50 | < 10 | heuristic alert |
+| **Decoy-support index D_alpha^-1/2** | <= 0.15 | 0.15--0.30 | > 0.30 | heuristic alert |
 | **D_alpha_win** | >= 20 | 5--20 | < 5 | heuristic alert |
 | **Decoy-reference PEP concordance, IPE (comparator D_b/T_b)** | <= 0.05 | -- | > 0.05 | heuristic alert |
 | **Equal chance under paired competition** \|pi_D - 0.5\| | <= 0.10 | 0.10--0.15 | > 0.15 (n/e on two-pass exports) | simulation-informed alert |
