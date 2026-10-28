@@ -6,6 +6,7 @@
 
 <div align="center" style="margin-top: 10px;">
   <a href="https://cran.r-project.org/web/packages/diagFDR/index.html"><img src="https://www.r-pkg.org/badges/version/diagFDR" alt="Version"></a>
+  <a href="https://github.com/Jacky11/diagFDR/actions/workflows/R-CMD-check.yaml"><img src="https://github.com/Jacky11/diagFDR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="GPL v3 License"></a>
   <a href="https://cran.r-project.org/web/packages/diagFDR/index.html"><img src="https://cranlogs.r-pkg.org/badges/grand-total/diagFDR?color=green" alt="Total Downloads"></a>
   <a href="https://cran.r-project.org/package=diagFDR"> <img src="https://cranlogs.r-pkg.org/badges/last-month/diagFDR?color=blue" alt="Monthly Downloads"> </a>
@@ -13,13 +14,36 @@
     <img src="https://img.shields.io/badge/https://doi.org/10.64898/2026.04.16.718468-green.svg" alt="DOI Badge">
 </div></a>
 
+## 0. Quick start (no data needed)
+
+```r
+library(diagFDR)
+vignette("quickstart", package = "diagFDR")
+sim <- sim_tdc_example                       # simulated list with known ground truth
+dfdr_headline(sim, alpha = 0.01)             # T, D, decoy ratio, support index, FDP-CV benchmark
+dfdr_realised_fdp(sim, alpha = 0.01)         # the realised FDP, known in simulation
+```
+
+New in 0.2.0--0.2.1 (everything reported in the paper is now computable from the package):
+
+| Question | Function |
+|---|---|
+| Which target/decoy label does a collapsed unit get? | `collapse_universe()`, `label_is_intrinsic()`, `dfdr_label_rule_audit()`, `diann_global_proteingroup()` |
+| Picked-protein competition instead of label propagation | `dfdr_picked_protein()` |
+| Entrapment FDP, raw and size-corrected, with Wilson intervals | `dfdr_entrapment()`, `dfdr_entrapment_size_ratio()` |
+| Where do two scope choices differ, and at what error? | `dfdr_accepted()`, `dfdr_entrapment_discordant()` |
+| Entrapment attribution on DIA-NN exports | `read_fasta_accessions()`, `diann_entrapment_ids()`, `dfdr_is_entrapment_group()` |
+| Ground-truth simulation of target-decoy competition | `dfdr_simulate_tdc()`, `dfdr_realised_fdp()`, `dfdr_check_cv_benchmark()` |
+
+The analyses of the paper are in <https://github.com/Jacky11/diagFDR-paper>.
+
 ## 1. Description
 
 False discovery rate (FDR) control is central to the credibility of peptide and protein identifications in mass spectrometry–based proteomics. **diagFDR** provides pipeline-agnostic diagnostics for target–decoy workflows that assess calibration and stability of reported confidence measures. It checks the coherence of scores, q-values, and posterior error probabilities (PEPs), quantifies decoy support near operating thresholds, measures cutoff sensitivity, and evaluates the equal-chance assumption using q-value band diagnostics.
 
 ## 2. Installation
 
-It is recommended to install the latest version of R. The CRAN version of the `diagFDR` package can be install using:
+It is recommended to install the latest version of R. The CRAN version of the `diagFDR` package can be installed using:
 
 ```
 install.packages("diagFDR")
