@@ -23,8 +23,7 @@ dfdr_headline(sim, alpha = 0.01)             # T, D, decoy ratio, support index,
 dfdr_realised_fdp(sim, alpha = 0.01)         # the realised FDP, known in simulation
 ```
 
-A Python port diagfdr 0.1.0 is available on PyPI (https://pypi.org/project/diagfdr) and at https:
-//github.com/Jacky11/diagfdr-py.
+A Python port diagfdr 0.1.0 is available on PyPI (https://pypi.org/project/diagfdr) and at https://github.com/Jacky11/diagfdr-py.
 
 The analyses of the paper are in <https://github.com/Jacky11/diagFDR-paper>.
 
