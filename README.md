@@ -23,17 +23,6 @@ dfdr_headline(sim, alpha = 0.01)             # T, D, decoy ratio, support index,
 dfdr_realised_fdp(sim, alpha = 0.01)         # the realised FDP, known in simulation
 ```
 
-New in 0.2.0--0.2.1 (everything reported in the paper is now computable from the package):
-
-| Question | Function |
-|---|---|
-| Which target/decoy label does a collapsed unit get? | `collapse_universe()`, `label_is_intrinsic()`, `dfdr_label_rule_audit()`, `diann_global_proteingroup()` |
-| Picked-protein competition instead of label propagation | `dfdr_picked_protein()` |
-| Entrapment FDP, raw and size-corrected, with Wilson intervals | `dfdr_entrapment()`, `dfdr_entrapment_size_ratio()` |
-| Where do two scope choices differ, and at what error? | `dfdr_accepted()`, `dfdr_entrapment_discordant()` |
-| Entrapment attribution on DIA-NN exports | `read_fasta_accessions()`, `diann_entrapment_ids()`, `dfdr_is_entrapment_group()` |
-| Ground-truth simulation of target-decoy competition | `dfdr_simulate_tdc()`, `dfdr_realised_fdp()`, `dfdr_check_cv_benchmark()` |
-
 The analyses of the paper are in <https://github.com/Jacky11/diagFDR-paper>.
 
 ## 1. Description
