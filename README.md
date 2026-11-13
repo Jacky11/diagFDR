@@ -6,7 +6,6 @@
 
 <div align="center" style="margin-top: 10px;">
   <a href="https://cran.r-project.org/web/packages/diagFDR/index.html"><img src="https://www.r-pkg.org/badges/version/diagFDR" alt="Version"></a>
-  <a href="https://github.com/Jacky11/diagFDR/actions/workflows/R-CMD-check.yaml"><img src="https://github.com/Jacky11/diagFDR/actions/workflows/R-CMD-check.yaml/badge.svg" alt="R-CMD-check"></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="GPL v3 License"></a>
   <a href="https://cran.r-project.org/web/packages/diagFDR/index.html"><img src="https://cranlogs.r-pkg.org/badges/grand-total/diagFDR?color=green" alt="Total Downloads"></a>
   <a href="https://cran.r-project.org/package=diagFDR"> <img src="https://cranlogs.r-pkg.org/badges/last-month/diagFDR?color=blue" alt="Monthly Downloads"> </a>
