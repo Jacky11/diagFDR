@@ -5,7 +5,7 @@
 #' compares the mean predicted PEP with the observed decoy fraction
 #' \eqn{D_b/(T_b+D_b)} within each bin. This \emph{pooled} comparator is kept
 #' as a secondary summary; the internal PEP
-#' calibration error (IPE) reported in the headline table is computed by
+#' concordance error (IPE) reported in the headline table is computed by
 #' \code{\link{dfdr_ipe}} with the target-decoy comparator \eqn{D_b/T_b}.
 #'
 #' @param x A \code{dfdr_tbl} with a non-missing \code{pep} column.
@@ -20,7 +20,7 @@
 #'   \item{bins}{A \link[tibble:tibble]{tibble} with one row per PEP bin and columns
 #'   \code{pep_mean} (mean predicted PEP), \code{decoy_rate} (observed decoy
 #'   fraction), and \code{n} (bin size).}
-#'   \item{IPE}{Numeric scalar. Pooled-comparator calibration error: weighted
+#'   \item{IPE}{Numeric scalar. Pooled-comparator concordance error: weighted
 #'   mean absolute deviation between \code{pep_mean} and \code{decoy_rate}
 #'   across eligible bins (\code{n >= n_min} and \code{pep_mean <= pep_max}).
 #'   \code{NA} if no eligible bins exist. See \code{\link{dfdr_ipe}} for the
@@ -423,7 +423,7 @@ dfdr_pep_reliability_tdc <- function(x,
   out
 }
 
-#' Internal PEP calibration error (IPE) with the target-decoy comparator
+#' Decoy-reference PEP concordance error (IPE) with the target-decoy comparator
 #'
 #' Computes the IPE used in the headline table and in the diagFDR paper.
 #' Targets and decoys are binned by PEP; in each bin \eqn{b} the mean PEP of

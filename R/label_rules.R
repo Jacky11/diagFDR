@@ -51,8 +51,9 @@ as_decoy_logical <- function(v, where = "Decoy") {
 #'     protein-group q-values and is the recommended rule wherever the
 #'     software competes target and decoy versions of a group.}
 #'   \item{\code{"winning_row"}}{The unit inherits the label of the row that
-#'     supplied its minimum q-value. The defensible default when a genuine
-#'     collapse to one unit per identifier is required.}
+#'     supplied its minimum q-value (a tie between a target and a decoy row at
+#'     the minimum resolves to the decoy label). The defensible default when a
+#'     genuine collapse to one unit per identifier is required.}
 #'   \item{\code{"any_decoy"}}{The unit is a decoy if any of its rows is.
 #'     What a direct \code{any(is_decoy)} aggregation produces; not
 #'     recommended on label-mixed identifiers.}
@@ -139,7 +140,7 @@ collapse_universe <- function(rep, key_col, q_col,
   n_mixed <- sum(n_lab > 1L)
 
   grp_key <- if (rule == "split") paste0(ifelse(dc, "DECOY:", ""), key) else key
-  o <- order(grp_key, q, method = "radix")
+  o <- order(grp_key, q, !dc, method = "radix")   # ties in q: decoy row first (conservative, deterministic)
   grp_key <- grp_key[o]; q <- q[o]; dc <- dc[o]; key <- key[o]
   if (!is.null(pep)) pep <- pep[o]
   if (!is.null(sc))  sc  <- sc[o]
