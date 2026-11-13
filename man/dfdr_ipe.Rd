@@ -2,7 +2,7 @@
 % Please edit documentation in R/diag_calibration.R
 \name{dfdr_ipe}
 \alias{dfdr_ipe}
-\title{Internal PEP calibration error (IPE) with the target-decoy comparator}
+\title{Decoy-reference PEP concordance error (IPE) with the target-decoy comparator}
 \usage{
 dfdr_ipe(x, binwidth = 0.05, pep_max = 0.5, n_min = 200, add_decoy = 0L)
 }

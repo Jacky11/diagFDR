@@ -75,8 +75,9 @@ compared in the diagFDR paper (Supplementary Note S9):
     protein-group q-values and is the recommended rule wherever the
     software competes target and decoy versions of a group.}
   \item{\code{"winning_row"}}{The unit inherits the label of the row that
-    supplied its minimum q-value. The defensible default when a genuine
-    collapse to one unit per identifier is required.}
+    supplied its minimum q-value (a tie between a target and a decoy row at
+    the minimum resolves to the decoy label). The defensible default when a
+    genuine collapse to one unit per identifier is required.}
   \item{\code{"any_decoy"}}{The unit is a decoy if any of its rows is.
     What a direct \code{any(is_decoy)} aggregation produces; not
     recommended on label-mixed identifiers.}
